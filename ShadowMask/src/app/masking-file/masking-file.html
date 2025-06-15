@@ -1,0 +1,224 @@
+<!-- <p class="text-xs">fileReady: {{ fileReady }}</p>
+
+<div class="container">
+  <h2 class="title">Privacy Masking File</h2>
+
+  <div class="file-section">
+    <input type="file" (change)="onUpload($event)" class="input" />
+    <button
+      class="button"
+      [disabled]="!fileReady"
+      (click)="onDownload()"
+    >
+      ⬇ Download Masked File
+    </button>
+  </div>
+
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option A: Clean Layout</h3>
+    <div class="grid-cols">
+      <div>
+        <h4>📄 Original File</h4>
+        <pre>{{ originalContent }}</pre>
+      </div>
+      <div>
+        <h4>🛡️ Masked Output</h4>
+        <pre class="masked">{{ maskedContent }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option B: Card Layout</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Original</h4>
+        <pre>{{ originalContent }}</pre>
+      </div>
+      <div class="card">
+        <h4>Masked</h4>
+        <pre class="masked">{{ maskedContent }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option C: Line-by-line Diff</h3>
+    <div class="diff-block">
+      <div *ngFor="let line of getDiffLines()" [ngClass]="line.changed ? 'changed' : 'unchanged'">
+        {{ line.line }}
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option D: Line-by-line Diff</h3>
+    <div class="diff-table">
+      <div class="diff-header">
+        <span>📄 Original</span>
+        <span>🛡️ Masked</span>
+      </div>
+
+      <div *ngFor="let line of getDiffLines2()" class="diff-row">
+        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.original }}</div>
+        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.masked }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option E: Clean Diff Layout with Highlight</h3>
+    <div class="grid-cols">
+      <div>
+        <h4>📄 Original File</h4>
+        <div class="diff-box">
+          <div
+            *ngFor="let line of getDiffLines2()"
+            [ngClass]="line.changed ? 'changed' : 'unchanged'"
+          >
+            {{ line.original }}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4>🛡️ Masked Output</h4>
+        <div class="diff-box">
+          <div
+            *ngFor="let line of getDiffLines2()"
+            [ngClass]="line.changed ? 'changed' : 'unchanged'"
+          >
+            {{ line.masked }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div> -->
+
+<p class="text-xs">fileReady: {{ fileReady }}</p>
+<div class="wrapper">
+  <h2 class="title">🛡️ Privacy Masking System</h2>
+
+
+  <!-- Upload + Download Section -->
+  <div class="upload-box">
+    <div class="upload-group">
+      <div class="upload-item">
+        <label>📁 Upload File</label>
+        <input type="file" (change)="onUpload($event)" />
+        <span *ngIf="fileReady">✅ {{ fileName }}</span>
+      </div>
+    </div>
+
+    <div class="download-group">
+      <button
+        class="download-button"
+        [disabled]="!fileReady"
+        (click)="onDownload()"
+      >
+        ⬇ Download Masked File
+      </button>
+    </div>
+  </div>
+
+  <!-- Option A -->
+  <div *ngIf="fileReady" class="preview-box">
+    <h3 class="preview-title">Option A: Clean Layout</h3>
+    <div class="grid-cols">
+      <div>
+        <h4>📄 Original File</h4>
+        <pre>{{ originalContent }}</pre>
+      </div>
+      <div>
+        <h4>🛡️ Masked Output</h4>
+        <pre class="masked">{{ maskedContent }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B -->
+  <div *ngIf="fileReady" class="preview-box">
+    <h3 class="preview-title">Option B: Card Layout</h3>
+    <div class="card-grid">
+      <div class="card">
+        <h4>Original</h4>
+        <pre>{{ originalContent }}</pre>
+      </div>
+      <div class="card">
+        <h4>Masked</h4>
+        <pre class="masked">{{ maskedContent }}</pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C -->
+  <div *ngIf="fileReady" class="preview-box">
+    <h3 class="preview-title">Option C: Line-by-line Diff</h3>
+    <div class="diff-block">
+      <div
+        *ngFor="let line of getDiffLines()"
+        [ngClass]="line.changed ? 'changed' : 'unchanged'"
+      >
+        {{ line.line }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Option D -->
+  <div *ngIf="fileReady" class="preview-box">
+    <h3 class="preview-title">Option D: Line-by-line Table Diff</h3>
+    <div class="diff-table">
+      <div class="diff-header">
+        <span>📄 Original</span>
+        <span>🛡️ Masked</span>
+      </div>
+
+      <div *ngFor="let line of getDiffLines2()" class="diff-row">
+        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">
+          {{ line.original }}
+        </div>
+        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">
+          {{ line.masked }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option E -->
+  <div *ngIf="fileReady" class="preview-box">
+    <h3 class="preview-title">Option E: Side-by-Side Line Diff</h3>
+    <div class="grid-cols">
+      <div>
+        <h4>📄 Original File</h4>
+        <div class="diff-box">
+          <div
+            *ngFor="let line of getDiffLines2()"
+            [ngClass]="line.changed ? 'changed' : 'unchanged'"
+          >
+            {{ line.original }}
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4>🛡️ Masked Output</h4>
+        <div class="diff-box">
+          <div
+            *ngFor="let line of getDiffLines2()"
+            [ngClass]="line.changed ? 'changed' : 'unchanged'"
+          >
+            {{ line.masked }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button (click)="userMasking()">user masking</button>
+<button (click)="labelCategory()">label category</button>
+<button (click)="allRandomized()">all randomized</button>
+<button (click)="sameDataRandomized()">same data randomized</button>
+

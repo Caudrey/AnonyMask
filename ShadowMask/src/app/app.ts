@@ -1,11 +1,11 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { invoke } from '@tauri-apps/api/core';
+import { NavBar } from './nav-bar/nav-bar';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, FormsModule],
+  imports: [FormsModule, NavBar],
   templateUrl: './app.html',
   styleUrl: './app.scss'
 })

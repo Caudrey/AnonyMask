@@ -1,0 +1,44 @@
+<div class="wrapper">
+  <h2 class="title">🔍 Unmasking System</h2>
+
+  <div class="upload-box">
+    <div class="upload-group">
+      <div class="upload-item">
+        <label>📁 Original File</label>
+        <input type="file" (change)="uploadOriginal($event)" />
+        <span *ngIf="originalFileName">✅ {{ originalFileName }}</span>
+      </div>
+
+      <div class="upload-item">
+        <label>🕵️ Masked File</label>
+        <input type="file" (change)="uploadMasked($event)" />
+        <span *ngIf="maskedFileName">✅ {{ maskedFileName }}</span>
+      </div>
+
+      <div class="upload-item">
+        <label>🧩 Processed File</label>
+        <input type="file" (change)="uploadProcessedMasked($event)" />
+        <span *ngIf="processedMaskedFileName">✅ {{ processedMaskedFileName }}</span>
+      </div>
+    </div>
+
+    <div class="download-group">
+      <button
+        class="download-button"
+        [disabled]="!fileReady || isGenerating"
+        (click)="onDownload()"
+      >
+        ⬇ Download Unmasked File
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="isGenerating" class="status-text">
+    🔄 Processing unmasking, please wait...
+  </div>
+
+  <div *ngIf="resultContent" class="preview-box">
+    <h3 class="preview-title">🔓 Unmasked Result Preview:</h3>
+    <pre>{{ resultContent }}</pre>
+  </div>
+</div>
