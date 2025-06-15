@@ -143,11 +143,11 @@
     <h3 class="preview-title">Option B: Card Layout</h3>
     <div class="card-grid">
       <div class="card">
-        <h4>Original</h4>
+        <h4>📄 Original File</h4>
         <pre>{{ originalContent }}</pre>
       </div>
       <div class="card">
-        <h4>Masked</h4>
+        <h4>🛡️ Masked Output</h4>
         <pre class="masked">{{ maskedContent }}</pre>
       </div>
     </div>
@@ -171,8 +171,8 @@
     <h3 class="preview-title">Option D: Line-by-line Table Diff</h3>
     <div class="diff-table">
       <div class="diff-header">
-        <span>📄 Original</span>
-        <span>🛡️ Masked</span>
+        <span>📄 Original File</span>
+        <span>🛡️ Masked Output</span>
       </div>
 
       <div *ngFor="let line of getDiffLines2()" class="diff-row">
