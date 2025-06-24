@@ -1,15 +1,27 @@
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
   background-color: #1f2937;
-  padding: 1rem;
+  padding: 1rem 2rem;
   display: flex;
+  align-items: center;
   gap: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   a {
     color: #f9fafb;
     font-weight: 500;
     text-decoration: none;
+    padding-bottom: 0.25rem;
+    transition: border-color 0.3s;
+
     &.active {
       border-bottom: 2px solid #3b82f6;
+    }
+
+    &:hover {
+      border-bottom: 2px solid #64748b; // sedikit efek hover tapi tetap soft
     }
   }
 }

@@ -217,8 +217,50 @@
   </div>
 </div>
 
-<button (click)="userMasking()">user masking</button>
+<!-- <button (click)="userMasking()">user masking</button>
 <button (click)="labelCategory()">label category</button>
 <button (click)="allRandomized()">all randomized</button>
-<button (click)="sameDataRandomized()">same data randomized</button>
+<button (click)="sameDataRandomized()">same data randomized</button> -->
+
+<div class="mini-navbar">
+  <button (click)="userMasking()">🧑 User Masking</button>
+  <button (click)="labelCategory()">🏷️ Label Category</button>
+  <button (click)="allRandomized()">🎲 All Randomizes</button>
+  <button (click)="sameDataRandomized()">🎯 Same Data Randomized</button>
+</div>
+
+
+
+<!-- Tabel hasil analisis muncul setelah tombol diklik -->
+<div *ngIf="isCategoryTableVisible" class="category-table-container">
+  <h3>Label Category Result</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Text</th>
+        <th>Count</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of labelCategoryTable">
+        <td>{{ row.category }}</td>
+        <td>{{ row.text }}</td>
+        <td>{{ row.count }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <!-- Tombol untuk apply masking baru muncul setelah tabel -->
+  <div class="apply-button-wrapper">
+    <button (click)="applyLabelCategoryReplacement()">🔁 Ganti Sesuai Kategori</button>
+  </div>
+</div>
+
+<!-- Menampilkan hasil masking -->
+<div *ngIf="maskedContent">
+  <h3>Hasil Masking:</h3>
+  <p>{{ maskedContent }}</p>
+</div>
 

@@ -151,16 +151,16 @@ export class MaskingFile {
   }
 
   // label category
-  labelCategory(): void {
-    this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsCategory, this.replacementTermsCategory);
+  // labelCategory(): void {
+  //   this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsCategory, this.replacementTermsCategory);
 
-    console.log('🧑‍💻 Label Category Replacement Log:', this.replacementLog);
-    this.replacementLog.forEach(log =>
-      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-    );
-    // You can optionally store this for later use in the UI:
-    // this.replacementLog = replacementLog;
-  }
+  //   console.log('🧑‍💻 Label Category Replacement Log:', this.replacementLog);
+  //   this.replacementLog.forEach(log =>
+  //     console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+  //   );
+  //   // You can optionally store this for later use in the UI:
+  //   // this.replacementLog = replacementLog;
+  // }
 
   // randomized
   randomStr(length: number, chars: string): string {
@@ -302,5 +302,61 @@ export class MaskingFile {
       console.log(`original: ${log.original} | replaced: ${log.replaced}`)
     );
   }
+
+
+  isCategoryTableVisible = false;
+  labelCategoryTable: Array<{ category: string, text: string, count: number }> = [];
+
+  labelCategory(): void {
+  this.replacementLog = [];
+
+  for (let i = 0; i < this.searchTermsCategory.length; i++) {
+    const search = this.searchTermsCategory[i];
+    const replace = this.replacementTermsCategory[i];
+    const regex = new RegExp(this.escapeRegExp(search), 'g');
+
+    let match;
+    while ((match = regex.exec(this.originalContent)) !== null) {
+      this.replacementLog.push({ original: match[0], replaced: replace });
+    }
+  }
+
+  const categoryMap = new Map<string, { text: string, count: number }>();
+  this.replacementLog.forEach(log => {
+    const key = `${log.replaced}||${log.original}`;
+    if (categoryMap.has(key)) {
+      categoryMap.get(key)!.count++;
+    } else {
+      categoryMap.set(key, { text: log.original, count: 1 });
+    }
+  });
+
+  this.labelCategoryTable = Array.from(categoryMap.entries()).map(([key, val]) => {
+    const [category, text] = key.split('||');
+    return {
+      category,
+      text,
+      count: val.count
+    };
+  });
+
+  this.isCategoryTableVisible = true;
+}
+
+
+applyLabelCategoryReplacement(): void {
+  this.maskedContent = this.replaceFromArray(
+    this.originalContent,
+    this.searchTermsCategory,
+    this.replacementTermsCategory
+  );
+
+  console.log('✅ Masking Applied (Kategori)');
+  this.replacementLog.forEach(log =>
+    console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+  );
+}
+
+
 
 }
