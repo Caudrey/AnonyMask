@@ -1,20 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-masking-file',
-  imports: [CommonModule, RouterModule],
+  standalone: true,
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './masking-file.html',
   styleUrl: './masking-file.scss'
 })
-export class MaskingFile {
- fileReady = false;
- fileName: String = '';
+export class MaskingFile implements OnInit {
+  fileReady = false;
+  fileName: String = '';
   // maskedContent = '';
   // originalContent = '';
-
-  isGenerating = false;
+  //   isGenerating = false;
 
   originalContent = 'My phone number is 123-456-7890 and my email is john@example.com';
   maskedContent = 'My phone number is ***-***-**** and my email is ****@example.com';
@@ -32,6 +33,21 @@ export class MaskingFile {
 
   replacementLog: { original: string; replaced: string }[] = [];
 
+  customUserReplacements: string[] = [];
+
+  randomizedPreview: Array<{ term: string, type: string, result: string }> = [];
+
+  allRandomizedPreview: Array<{ term: string, type: string, result: string }> = [];
+
+  activePreviewType: 'label' | 'same' | 'all' | null = null;
+
+  // Tambahan properti:
+  isPostMaskingOptionsVisible = false;
+  newWord: string = '';
+  excludeWord: string = '';
+  excludedWords: string[] = [];
+  maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
+
   // onUpload(event: Event): void {
   //   const input = event.target as HTMLInputElement;
   //   if (input.files?.length) {
@@ -40,6 +56,18 @@ export class MaskingFile {
   //     setTimeout(() => this.isGenerating = false, 2000); // simulate processing
   //   }
   // }
+
+  ngOnInit(): void {
+    this.customUserReplacements = this.searchTermsCategory.map(() => '');
+  }
+
+  isUserFormVisible = false;
+
+  toggleUserForm(): void {
+    this.isUserFormVisible = !this.isUserFormVisible;
+  }
+
+
   onUpload(event: Event): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
@@ -120,6 +148,10 @@ export class MaskingFile {
 
   // user masking
   userMasking(): void {
+    this.activePreviewType = null; // 💥 sembunyikan semua preview tabel
+    this.randomizedPreview = [];
+    this.allRandomizedPreview = [];
+
     this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsUser, this.replacementTermsUser);
 
     console.log('🧑‍💻 User Replacement Log:', this.replacementLog);
@@ -128,6 +160,20 @@ export class MaskingFile {
     );
     // You can optionally store this for later use in the UI:
     // this.replacementLog = replacementLog;
+  }
+
+  applyCustomUserMasking(): void {
+    const effectiveReplacements: string[] = this.searchTermsCategory.map((_, i) =>
+      this.customUserReplacements[i]?.trim() || this.replacementTermsCategory[i]
+    );
+
+    this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsCategory, effectiveReplacements);
+
+    console.log('🧑‍💻 Custom User Masking Applied:', this.replacementLog);
+    console.log('🧑‍💻 User Replacement Log:', this.replacementLog);
+    this.replacementLog.forEach(log =>
+      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+    );
   }
 
   replaceFromArray(content: string, searchTerms: string[], replacementTerms: string[]): string {
@@ -181,7 +227,7 @@ export class MaskingFile {
     const digits = '0123456789';
     let format: 'email' | 'phone' | 'text' | 'number' | 'mixed' | 'date' = 'text';
 
-     switch (typeOrFormat) {
+    switch (typeOrFormat) {
       case '[EMAIL]':
         format = 'email';
         break;
@@ -268,95 +314,158 @@ export class MaskingFile {
     let result = this.originalContent;
     this.replacementLog = []; // Clear previous log
 
-    for (let i = 0; i < this.searchTermsCategory.length; i++) {
+  for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const term = this.searchTermsCategory[i];
-      const type = this.replacementTermsCategory[i] || '[TEXT]';
+    const type = this.replacementTermsCategory[i] || '[TEXT]';
 
       const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
       result = result.replace(searchRegex, (match) => {
         const replacement = this.randomizeSpecificContent(type, term.length);
         this.replacementLog.push({ original: match, replaced: replacement });
         return replacement;
-      });
-    }
+    });
+  }
 
     this.maskedContent = result;
 
     console.log("🔍 All Replacement Log:", this.replacementLog);
     this.replacementLog.forEach(log =>
       console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-    );
+  );
+
+  this.isPostMaskingOptionsVisible = true;
+}
+
+
+sameDataRandomized(): void {
+  this.replacementTermsRandomized = [];
+  this.randomizedPreview = [];
+  this.activePreviewType = 'same';
+
+  for (let i = 0; i < this.replacementTermsCategory.length; i++) {
+    const original = this.searchTermsDataRandomized[i];
+    const type = this.replacementTermsCategory[i];
+    const randomized = this.randomizeSpecificContent(type, original.length);    this.replacementTermsRandomized.push(randomized);
+    this.randomizedPreview.push({
+      term: original,
+      type: type,
+      result: randomized
+    });
   }
-
-
-  sameDataRandomized(): void {
-    for (let i = 0; i < this.replacementTermsCategory.length; i++) {
-      const randomized = this.randomizeSpecificContent(this.replacementTermsCategory[i], this.searchTermsDataRandomized[i].length);
-      this.replacementTermsRandomized.push(randomized);
-    }
 
     this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsDataRandomized, this.replacementTermsRandomized);
 
-    console.log('🔍 Same Data Replacement Log:', this.replacementLog);
-    this.replacementLog.forEach(log =>
-      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-    );
-  }
+  console.log('🔍 Same Data Replacement Log:', this.replacementLog);
+  this.replacementLog.forEach(log =>
+    console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+  );
+
+  this.isPostMaskingOptionsVisible = true;
+}
 
 
   isCategoryTableVisible = false;
   labelCategoryTable: Array<{ category: string, text: string, count: number }> = [];
 
   labelCategory(): void {
-  this.replacementLog = [];
+    this.replacementLog = [];
 
-  for (let i = 0; i < this.searchTermsCategory.length; i++) {
-    const search = this.searchTermsCategory[i];
-    const replace = this.replacementTermsCategory[i];
-    const regex = new RegExp(this.escapeRegExp(search), 'g');
+      // Reset semua tampilan lain
+    this.activePreviewType = 'label';
+    this.randomizedPreview = [];
+    this.allRandomizedPreview = [];
 
-    let match;
-    while ((match = regex.exec(this.originalContent)) !== null) {
-      this.replacementLog.push({ original: match[0], replaced: replace });
+    for (let i = 0; i < this.searchTermsCategory.length; i++) {
+      const search = this.searchTermsCategory[i];
+      const replace = this.replacementTermsCategory[i];
+      const regex = new RegExp(this.escapeRegExp(search), 'g');
+
+      let match;
+      while ((match = regex.exec(this.originalContent)) !== null) {
+        this.replacementLog.push({ original: match[0], replaced: replace });
+      }
     }
+
+    const categoryMap = new Map<string, { text: string, count: number }>();
+    this.replacementLog.forEach(log => {
+      const key = `${log.replaced}||${log.original}`;
+      if (categoryMap.has(key)) {
+        categoryMap.get(key)!.count++;
+      } else {
+        categoryMap.set(key, { text: log.original, count: 1 });
+      }
+    });
+
+    this.labelCategoryTable = Array.from(categoryMap.entries()).map(([key, val]) => {
+      const [category, text] = key.split('||');
+      return {
+        category,
+        text,
+        count: val.count
+      };
+    });
+
+    this.isCategoryTableVisible = true;
   }
 
-  const categoryMap = new Map<string, { text: string, count: number }>();
-  this.replacementLog.forEach(log => {
-    const key = `${log.replaced}||${log.original}`;
-    if (categoryMap.has(key)) {
-      categoryMap.get(key)!.count++;
-    } else {
-      categoryMap.set(key, { text: log.original, count: 1 });
-    }
-  });
+  applyLabelCategoryReplacement(): void {
+    this.maskedContent = this.replaceFromArray(
+      this.originalContent,
+      this.searchTermsCategory,
+      this.replacementTermsCategory
+    );
 
-  this.labelCategoryTable = Array.from(categoryMap.entries()).map(([key, val]) => {
-    const [category, text] = key.split('||');
-    return {
-      category,
-      text,
-      count: val.count
-    };
-  });
+    console.log('✅ Masking Applied (Kategori)');
+    this.replacementLog.forEach(log =>
+      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+    );
 
-  this.isCategoryTableVisible = true;
+    this.isPostMaskingOptionsVisible = true;
+  }
+
+  addNewWord(): void {
+  if (this.newWord.trim()) {
+    this.searchTermsUser.push(this.newWord.trim());
+    this.replacementTermsUser.push('[USER_ADDED]');
+    this.newWord = '';
+    alert('Word added to masking list.');
+  }
 }
 
+excludeWordFromMasking(): void {
+  if (this.excludeWord.trim()) {
+    this.excludedWords.push(this.excludeWord.trim());
+    this.excludeWord = '';
+    alert('Word excluded from masking.');
+  }
+}
 
-applyLabelCategoryReplacement(): void {
+applyMaskingStyle(): void {
+  const applyMask = (word: string): string => {
+    switch (this.maskingStyle) {
+      case 'redact': return '[REDACTED]';
+      case 'full': return '*'.repeat(word.length);
+      case 'partial':
+        const visible = Math.ceil(word.length * 0.3);
+        return word.slice(0, visible) + '*'.repeat(word.length - visible);
+      default: return word;
+    }
+  };
+
+  this.replacementLog = this.replacementLog.map(log => {
+    if (this.excludedWords.includes(log.original)) return log; // skip if excluded
+    return { original: log.original, replaced: applyMask(log.original) };
+  });
+
+  // Ulangi masking dengan style baru
   this.maskedContent = this.replaceFromArray(
     this.originalContent,
-    this.searchTermsCategory,
-    this.replacementTermsCategory
+    this.replacementLog.map(l => l.original),
+    this.replacementLog.map(l => l.replaced)
   );
 
-  console.log('✅ Masking Applied (Kategori)');
-  this.replacementLog.forEach(log =>
-    console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-  );
+  console.log(`🎭 Applied style '${this.maskingStyle}'`);
 }
-
 
 
 }

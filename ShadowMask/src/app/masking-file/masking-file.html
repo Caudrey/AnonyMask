@@ -101,7 +101,6 @@
 <div class="wrapper">
   <h2 class="title">🛡️ Privacy Masking System</h2>
 
-
   <!-- Upload + Download Section -->
   <div class="upload-box">
     <div class="upload-group">
@@ -217,22 +216,16 @@
   </div>
 </div>
 
-<!-- <button (click)="userMasking()">user masking</button>
-<button (click)="labelCategory()">label category</button>
-<button (click)="allRandomized()">all randomized</button>
-<button (click)="sameDataRandomized()">same data randomized</button> -->
-
+<!-- Mini Navbar -->
 <div class="mini-navbar">
-  <button (click)="userMasking()">🧑 User Masking</button>
+<button (click)="toggleUserForm()">🧑 User Masking</button>
   <button (click)="labelCategory()">🏷️ Label Category</button>
   <button (click)="allRandomized()">🎲 All Randomizes</button>
   <button (click)="sameDataRandomized()">🎯 Same Data Randomized</button>
 </div>
 
-
-
-<!-- Tabel hasil analisis muncul setelah tombol diklik -->
-<div *ngIf="isCategoryTableVisible" class="category-table-container">
+<!-- Tabel hasil analisis -->
+<div *ngIf="activePreviewType === 'label'" class="category-table-container">
   <h3>Label Category Result</h3>
   <table>
     <thead>
@@ -251,16 +244,104 @@
     </tbody>
   </table>
 
-
-  <!-- Tombol untuk apply masking baru muncul setelah tabel -->
+  <!-- Tombol untuk apply kategori -->
   <div class="apply-button-wrapper">
     <button (click)="applyLabelCategoryReplacement()">🔁 Ganti Sesuai Kategori</button>
   </div>
 </div>
 
-<!-- Menampilkan hasil masking -->
+<!-- ✅ Form input custom user masking -->
+<div *ngIf="isUserFormVisible && fileReady" class="user-replacement-box">
+  <h3 class="preview-title">🧑‍💻 Custom Replacement per Category</h3>
+  <form (ngSubmit)="applyCustomUserMasking()" #userForm="ngForm">
+    <div class="form-grid">
+      <div *ngFor="let term of searchTermsCategory; let i = index" class="form-row">
+        <label>{{ replacementTermsCategory[i] }}:</label>
+        <input
+          type="text"
+          [(ngModel)]="customUserReplacements[i]"
+          name="replacement-{{ i }}"
+          placeholder="Enter custom replacement..."
+        />
+      </div>
+    </div>
+
+    <button type="submit" class="apply-button">🔁 Apply Custom Masking</button>
+  </form>
+</div>
+
+<!-- Preview untuk Same Data Randomized -->
+<div *ngIf="activePreviewType === 'same'" class="randomized-preview-box">
+  <h3>🔍 Randomized Preview (Same Data)</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Original</th>
+        <th>Type</th>
+        <th>Randomized Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of randomizedPreview">
+        <td>{{ row.term }}</td>
+        <td>{{ row.type }}</td>
+        <td>{{ row.result }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Preview untuk All Randomized -->
+<div *ngIf="activePreviewType === 'all'" class="randomized-preview-box">
+  <h3>🎲 All Randomized Preview</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Original</th>
+        <th>Type</th>
+        <th>Randomized Result</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of allRandomizedPreview">
+        <td>{{ row.term }}</td>
+        <td>{{ row.type }}</td>
+        <td>{{ row.result }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+
+<!-- Hasil akhir -->
 <div *ngIf="maskedContent">
   <h3>Hasil Masking:</h3>
   <p>{{ maskedContent }}</p>
+</div>
+
+<div *ngIf="isPostMaskingOptionsVisible" class="post-masking-options">
+  <h3>⚙️ Post-Masking Options</h3>
+
+  <div class="option-group">
+    <label for="newWord">➕ Add New Word:</label>
+    <input id="newWord" [(ngModel)]="newWord" placeholder="Enter word to mask" />
+    <button (click)="addNewWord()">Add</button>
+  </div>
+
+  <div class="option-group">
+    <label for="excludeWord">🚫 Exclude Word:</label>
+    <input id="excludeWord" [(ngModel)]="excludeWord" placeholder="Enter word to exclude" />
+    <button (click)="excludeWordFromMasking()">Exclude</button>
+  </div>
+
+  <div class="option-group">
+    <label>🛡️ Masking Style:</label>
+    <select [(ngModel)]="maskingStyle" (change)="applyMaskingStyle()">
+      <option value="redact">Redact (e.g. [REDACTED])</option>
+      <option value="full">Fully Mask (e.g. *******)</option>
+      <option value="partial">Partial Mask (e.g. J*** D***)</option>
+    </select>
+  </div>
 </div>
 
