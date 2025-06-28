@@ -59,23 +59,45 @@
   </div>
   </div>
 
-   <!-- ⬇️ MAPPING TABLE TAMPIL SETELAH FILES DAN PREVIEW ADA -->
-  <div *ngIf="maskedMapping.length > 0" class="mapping-table-box">
-    <h4 class="preview-title">📋 Masking Word Mapping</h4>
-    <table class="mapping-table">
-      <thead>
-        <tr>
-          <th>🧾 Original Word</th>
-          <th>🕵️ Masked Word</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of maskedMapping">
-          <td>{{ item.original }}</td>
-          <td>{{ item.masked }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- ⬇️ MAPPING TABLE TAMPIL SETELAH FILES DAN PREVIEW ADA -->
+    <div *ngIf="maskedMapping.length > 0" class="mapping-table-box" class="preview-box">
+      <h3 class="preview-title">📋 Masking Word Mapping</h3>
+      <table class="mapping-table">
+        <thead>
+          <tr>
+            <th>🧾 Original Word</th>
+            <th>🕵️ Masked Word</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of maskedMapping">
+            <td>{{ item.original }}</td>
+            <td>{{ item.masked }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  <div *ngIf="fileReady" class="preview-box">
+  <h3 class="preview-title">Result Comparison</h3>
+  <div class="grid-cols preview-row">
+    <div>
+      <h4>🧩 Processed File</h4>
+      <div class="text-preview">
+        <ng-container *ngFor="let token of processedTokensWithDiff">
+          <span [ngClass]="{ 'highlight-original': token.changed }">{{ token.word }}</span>&nbsp;
+        </ng-container>
+      </div>
+    </div>
+    <div>
+      <h4>🔓 Unmasked Result</h4>
+      <div class="text-preview">
+        <ng-container *ngFor="let token of resultTokensWithDiff">
+          <span [ngClass]="{ 'highlight-masked': token.changed }">{{ token.word }}</span>&nbsp;
+        </ng-container>
+      </div>
+    </div>
+  </div>
   </div>
 
 

@@ -26,6 +26,8 @@ fileReady = false;
 
   originalTokensWithDiff: { word: string, changed: boolean }[] = [];
   maskedTokensWithDiff: { word: string, changed: boolean }[] = [];
+  processedTokensWithDiff: { word: string, changed: boolean }[] = [];
+  resultTokensWithDiff: { word: string, changed: boolean }[] = [];
 
   maskedMapping: { original: string; masked: string }[] = [];
 
@@ -131,6 +133,20 @@ fileReady = false;
 
               this.originalTokensWithDiff.push({ word: oWord, changed });
               this.maskedTokensWithDiff.push({ word: mWord, changed });
+            }
+
+            const resultWords = this.unmaskedResult.trim().split(/\s+/);
+            this.processedTokensWithDiff = [];
+            this.resultTokensWithDiff = [];
+
+            const len2 = Math.max(processedTokens.length, resultWords.length);
+            for (let i = 0; i < len2; i++) {
+              const pWord = processedTokens[i] || '';
+              const rWord = resultWords[i] || '';
+              const changed = pWord !== rWord;
+
+              this.processedTokensWithDiff.push({ word: pWord, changed });
+              this.resultTokensWithDiff.push({ word: rWord, changed });
             }
 
           }, 500);
