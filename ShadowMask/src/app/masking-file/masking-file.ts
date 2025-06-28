@@ -2,6 +2,11 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import * as pdfjsLib from 'pdfjs-dist';
+import * as mammoth from 'mammoth';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import { Document, Packer, Paragraph } from 'docx';
 
 @Component({
   selector: 'app-masking-file',
@@ -12,7 +17,7 @@ import { FormsModule } from '@angular/forms';
 })
 export class MaskingFile implements OnInit {
   fileReady = false;
-  fileName: String = '';
+  fileName: string = '';
   // maskedContent = '';
   // originalContent = '';
   //   isGenerating = false;
@@ -51,6 +56,13 @@ export class MaskingFile implements OnInit {
   clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
 
+  constructor() {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+      'pdfjs-dist/build/pdf.worker.min.mjs',
+      import.meta.url,
+    ).toString();
+  }
+
   ngOnInit(): void {
     this.originalContent = "Hi my email is john@example.com and. phone is 1234567890. Makan";
     this.maskedContent = "[MASKED]";
@@ -59,7 +71,6 @@ export class MaskingFile implements OnInit {
       { original: '1234567890', replaced: '[PHONE]' },
     ];
     this.generatePreviewTables();
-    this.fileReady = true;
   }
 
   isUserFormVisible = false;
@@ -71,33 +82,120 @@ export class MaskingFile implements OnInit {
 
   onUpload(event: Event): void {
     const input = event.target as HTMLInputElement;
+
+    if (!input.files?.[0]) return;
+
+    const supportedTypes = [
+      'text/plain',
+      'application/pdf',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/csv'
+    ];
+
+    // 🔒 Reject unsupported file types BEFORE any processing
+    if (!supportedTypes.includes(input.files?.[0].type)) {
+      alert(`❌ Unsupported file type: ${input.files?.[0].name}\nPlease upload a .txt, .pdf, .docx, .xlsx, .xls, or .csv file.`);
+      input.value = '';
+      this.fileName = '';
+      this.fileReady = false;
+      return;
+    }
+
     const file = input.files?.[0];
-    if (file) {
-      const reader = new FileReader();
+    this.fileName = file.name;
+    const fileType = file.type;
+    const reader = new FileReader();
+
+    // TXT
+    if (fileType === supportedTypes[0]) {
       reader.onload = () => {
         this.originalContent = reader.result as string;
-        this.maskedContent = this.maskPrivacy(this.originalContent);
-        console.log("🔍 First Replacement Log:", this.replacementLog);
-        this.replacementLog.forEach(log =>
-          console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-        );
-        this.fileName = file.name;
-        this.fileReady = true;
+        this.processOriginalContent();
       };
       reader.readAsText(file);
 
-      this.generatePreviewTables();
+    // PDF
+    } else if (fileType === supportedTypes[1]) {
+      reader.onload = async () => {
+        const typedArray = new Uint8Array(reader.result as ArrayBuffer);
+        const pdf = await pdfjsLib.getDocument({ data: typedArray }).promise;
+        let text = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+
+          const strings: string[] = [];
+          let lastY: number | null = null;
+
+          (content.items as any[]).forEach((item) => {
+            const text = item.str;
+            const y = item.transform[5];
+
+            if (lastY !== null && Math.abs(y - lastY) > 5) {
+              strings.push('\n'); // new line
+            }
+
+            strings.push(text);
+            lastY = y;
+          });
+          text += strings.join('');
+        }
+        this.originalContent = text;
+        this.processOriginalContent();
+      };
+      reader.readAsArrayBuffer(file);
+
+    // DOCX
+    } else if ( fileType === supportedTypes[2]) {
+      reader.onload = async () => {
+        const result = await mammoth.extractRawText({ arrayBuffer: reader.result as ArrayBuffer });
+        this.originalContent = result.value.replace(/\n\n/g, '\n');
+        this.processOriginalContent();
+      };
+
+      reader.readAsArrayBuffer(file);
+
+    // XLSX / XLS / CSV
+    } else if (
+    fileType === supportedTypes[3] ||
+    fileType === supportedTypes[4] || fileType === supportedTypes[5]
+  ) {
+    reader.onload = (e) => {
+      const data = new Uint8Array(reader.result as ArrayBuffer);
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      let result = '';
+      workbook.SheetNames.forEach(sheetName => {
+        const worksheet = workbook.Sheets[sheetName];
+        const sheetData = XLSX.utils.sheet_to_csv(worksheet); // or .sheet_to_txt
+        const viewDataExcel = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
+        result += `Sheet: ${sheetName}\n${sheetData}\n\n`;
+      });
+
+      this.originalContent = result;
+      this.processOriginalContent();
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+      alert('Unsupported file type. Please upload .txt, .pdf, or .docx');
     }
-
-    console.log("TESTING RANDOMIZED CONTENT")
-    console.log(this.randomizeSpecificContent('number', 6)); // "274931"
-    console.log(this.randomizeSpecificContent('text', 10));  // "bnksurtyeo"
-    console.log(this.randomizeSpecificContent('email', 12)); // "ah6z7q@mjgd.com"
-    console.log(this.randomizeSpecificContent('phone', 12)); // "+62892731095"
-    console.log(this.randomizeSpecificContent('mixed', 10)); // "zxtqp73920"
-    console.log(this.randomizeSpecificContent('date'));     // '2014-06-19'
-
   }
+
+
+  processOriginalContent(): void {
+    this.maskedContent = this.maskPrivacy(this.originalContent);
+    this.fileReady = true;
+
+    console.log("🔍 First Replacement Log:", this.replacementLog);
+    this.replacementLog.forEach(log =>
+      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+    );
+
+    this.generatePreviewTables();
+  }
+
 
   maskPrivacy(content: string): string {
     this.replacementLog = []; // Clear previous log
@@ -140,12 +238,162 @@ export class MaskingFile implements OnInit {
   }
 
   onDownload(): void {
-    console.log('Downloading compared file...');
+    if (!this.fileName || !this.fileName.includes('.')) {
+      console.error('Unknown file type.');
+      return;
+    }
+
+    if (!this.fileName || !this.maskedContent) {
+      alert('No file to download.');
+      return;
+    }
+
+    const extension = this.fileName.split('.').pop()?.toLowerCase();
+
+    switch (extension) {
+      case 'txt':
+        this.downloadTextFile();
+        break;
+      case 'pdf':
+        this.downloadPdfFile();
+        break;
+      case 'docx':
+          this.downloadDocxFile();
+          break;
+      case 'csv':
+        this.downloadCsvFile();
+        break;
+      case 'xls':
+        this.downloadXlsFile();
+        break;
+      case 'xlsx':
+        this.downloadXlsxFile();
+        break;
+      default:
+        alert('Unsupported file type for download.');
+    }
+  }
+
+  downloadTextFile(): void {
     const blob = new Blob([this.maskedContent], { type: 'text/plain' });
+    this.triggerDownload(blob, 'masked_' + this.fileName);
+  }
+
+  downloadPdfFile(): void {
+    const doc = new jsPDF();
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+
+    const margin = 20;
+    const lineHeight = 8;
+    const maxY = 290; // bottom page limit
+    const maxWidth = doc.internal.pageSize.getWidth() - 2 * margin;
+
+    let y = margin;
+    const lines = this.maskedContent.split('\n');
+
+    lines.forEach(line => {
+      const wrapped = doc.splitTextToSize(line, maxWidth);
+      wrapped.forEach((wrapLine: string) => {
+        if (y + lineHeight > maxY) {
+          doc.addPage();
+          y = margin;
+        }
+        doc.text(wrapLine, margin, y);
+        y += lineHeight;
+      });
+    });
+
+    doc.save('masked_' + this.fileName);
+  }
+
+  downloadDocxFile(): void {
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: this.maskedContent
+          .split('\n')
+          .map(line => new Paragraph(line))
+      }]
+    });
+
+    Packer.toBlob(doc).then(blob => {
+      this.triggerDownload(blob, 'masked_' + this.fileName);
+    });
+  }
+
+  downloadXlsxFile(): void {
+    if (!this.maskedContent) return;
+
+    const sheets = this.maskedContent.split(/Sheet:\s+/).filter(s => s.trim());
+    const workbook = XLSX.utils.book_new();
+
+    sheets.forEach(sheetBlock => {
+      const [sheetNameLine, ...lines] = sheetBlock.trim().split('\n');
+      const sheetName = sheetNameLine.trim();
+
+      const rows = lines
+        .filter(line => line.trim())
+        .map(line => line.split(','));
+
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    });
+
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    });
+
+    const downloadName = this.fileName.replace(/\.[^/.]+$/, '') + '.xlsx';
+    this.triggerDownload(blob, downloadName);
+  }
+
+  downloadXlsFile(): void {
+    if (!this.maskedContent) return;
+
+    const sheets = this.maskedContent.split(/Sheet:\s+/).filter(s => s.trim());
+    const workbook = XLSX.utils.book_new();
+
+    sheets.forEach(sheetBlock => {
+      const [sheetNameLine, ...lines] = sheetBlock.trim().split('\n');
+      const sheetName = sheetNameLine.trim();
+      const rows = lines.map(line => line.split(','));
+      const worksheet = XLSX.utils.aoa_to_sheet(rows);
+      XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+    });
+
+    const wbout = XLSX.write(workbook, { bookType: 'xls', type: 'array' });
+    const blob = new Blob([wbout], {
+      type: 'application/vnd.ms-excel',
+    });
+
+    const downloadName = this.fileName.replace(/\.[^/.]+$/, '') + '.xls';
+    this.triggerDownload(blob, downloadName);
+  }
+
+  downloadCsvFile(): void {
+    if (!this.maskedContent) return;
+
+    const sheetBlocks = this.maskedContent.split(/Sheet:\s+/).filter(s => s.trim());
+
+    sheetBlocks.forEach(sheetBlock => {
+      const [sheetNameLine, ...lines] = sheetBlock.trim().split('\n');
+      const sheetName = sheetNameLine.trim();
+      const csvData = lines.join('\n');
+
+      const blob = new Blob([csvData], { type: 'text/csv' });
+      const downloadName =  this.fileName.replace(/\.[^/.]+$/, '') + '.csv';
+      this.triggerDownload(blob, downloadName);
+    });
+  }
+
+
+  triggerDownload(blob: Blob, filename: string): void {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'masked-file.txt';
+    a.download = 'masked_' + filename;
     a.click();
     window.URL.revokeObjectURL(url);
   }
