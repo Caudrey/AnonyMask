@@ -21,6 +21,13 @@ fileReady = false;
   unmaskedResult: string = '';
   processedFileRawName: string = '';
 
+  originalContent: string = '';
+  maskedContent: string = '';
+
+  originalTokensWithDiff: { word: string, changed: boolean }[] = [];
+  maskedTokensWithDiff: { word: string, changed: boolean }[] = [];
+
+  maskedMapping: { original: string; masked: string }[] = [];
 
   resultContent: string = '';
 
@@ -39,11 +46,9 @@ fileReady = false;
   private handleUpload(event: Event, type: 'original' | 'masked' | 'processed') {
     const input = event.target as HTMLInputElement;
     if (input.files?.length) {
-      const fileName = input.files[0].name;
-      if (type === 'original') this.originalFileName = fileName;
-      if (type === 'masked') this.maskedFileName = fileName;
-      if (type === 'processed') this.processedMaskedFileName = fileName;
-
+      const file = input.files[0];
+      const fileName = file.name;
+      const reader = new FileReader();
       // if (this.originalFileName && this.maskedFileName && this.processedMaskedFileName) {
       //   this.fileReady = true;
       //   this.isGenerating = true;
@@ -53,16 +58,25 @@ fileReady = false;
       //   }, 2000); // simulate processing
       // }
 
-      const reader = new FileReader();
-      reader.onload = () => {
+    reader.onload = () => {
         const content = reader.result as string;
+
         if (type === 'original') {
+          this.originalFileName = fileName;
           this.originalText = content;
-        } else if (type === 'masked') {
+          this.originalContent = content;
+        }
+
+        if (type === 'masked') {
+          this.maskedFileName = fileName;
           this.maskedText = content;
-        } else if (type === 'processed') {
-          this.processedText = content;
+          this.maskedContent = content;
+        }
+
+        if (type === 'processed') {
+          this.processedMaskedFileName = fileName;
           this.processedFileRawName = fileName;
+          this.processedText = content;
         }
 
         if (this.originalText && this.maskedText && this.processedText) {
@@ -93,12 +107,36 @@ fileReady = false;
               return token;
             });
 
+            this.maskedMapping = mapping.map(pair => ({
+              original: pair.original,
+              masked: pair.masked
+            }));
+
             this.unmaskedResult = resultTokens.join(' ');
             this.resultContent = this.unmaskedResult;
             this.isGenerating = false;
+
+            const originalWords = this.originalText.trim().split(/\s+/);
+            const maskedWords = this.maskedText.trim().split(/\s+/);
+
+            this.originalTokensWithDiff = [];
+            this.maskedTokensWithDiff = [];
+
+            const len = Math.max(originalWords.length, maskedWords.length);
+
+            for (let i = 0; i < len; i++) {
+              const oWord = originalWords[i] || '';
+              const mWord = maskedWords[i] || '';
+              const changed = oWord !== mWord;
+
+              this.originalTokensWithDiff.push({ word: oWord, changed });
+              this.maskedTokensWithDiff.push({ word: mWord, changed });
+            }
+
           }, 500);
         }
       };
+
       reader.readAsText(input.files[0]);
     }
   }

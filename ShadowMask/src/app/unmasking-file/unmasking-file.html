@@ -37,6 +37,49 @@
     🔄 Processing unmasking, please wait...
   </div>
 
+<div *ngIf="fileReady" class="preview-box">
+  <h3 class="preview-title">Option A: Clean Layout</h3>
+  <div class="grid-cols">
+    <div>
+      <h4>📄 Original File</h4>
+      <div class="text-preview">
+        <ng-container *ngFor="let token of originalTokensWithDiff">
+          <span [ngClass]="{ 'highlight-original': token.changed }">{{ token.word }}</span>&nbsp;
+        </ng-container>
+      </div>
+    </div>
+    <div>
+      <h4>🛡️ Masked Output</h4>
+      <div class="text-preview">
+        <ng-container *ngFor="let token of maskedTokensWithDiff">
+          <span [ngClass]="{ 'highlight-masked': token.changed }">{{ token.word }}</span>&nbsp;
+        </ng-container>
+      </div>
+    </div>
+  </div>
+  </div>
+
+   <!-- ⬇️ MAPPING TABLE TAMPIL SETELAH FILES DAN PREVIEW ADA -->
+  <div *ngIf="maskedMapping.length > 0" class="mapping-table-box">
+    <h4 class="preview-title">📋 Masking Word Mapping</h4>
+    <table class="mapping-table">
+      <thead>
+        <tr>
+          <th>🧾 Original Word</th>
+          <th>🕵️ Masked Word</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of maskedMapping">
+          <td>{{ item.original }}</td>
+          <td>{{ item.masked }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+
   <div *ngIf="resultContent" class="preview-box">
     <h3 class="preview-title">🔓 Unmasked Result Preview:</h3>
     <pre>{{ resultContent }}</pre>
