@@ -39,26 +39,27 @@ export class MaskingFile implements OnInit {
 
   allRandomizedPreview: Array<{ term: string, type: string, result: string }> = [];
 
-  activePreviewType: 'label' | 'same' | 'all' | null = null;
+  activePreviewType: 'valueCategory' | 'category' | 'value' | 'all' | 'same' | null = null;
 
-  // Tambahan properti:
-  isPostMaskingOptionsVisible = false;
-  newWord: string = '';
-  excludeWord: string = '';
-  excludedWords: string[] = [];
+  valueCategoryTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
+
+  categoryOnlyTable: Array<{ ori: string; masked: string; count: number }> = [];
+
+  valueOnlyTable: Array<{ ori: string; type: string; masked: string }> = [];
+
+  isClicked = false;
+  clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
 
-  // onUpload(event: Event): void {
-  //   const input = event.target as HTMLInputElement;
-  //   if (input.files?.length) {
-  //     this.fileReady = true;
-  //     this.isGenerating = true;
-  //     setTimeout(() => this.isGenerating = false, 2000); // simulate processing
-  //   }
-  // }
-
   ngOnInit(): void {
-    this.customUserReplacements = this.searchTermsCategory.map(() => '');
+    this.originalContent = "Hi my email is john@example.com and. phone is 1234567890. Makan";
+    this.maskedContent = "[MASKED]";
+    this.replacementLog = [
+      { original: 'john@example.com', replaced: '[EMAIL]' },
+      { original: '1234567890', replaced: '[PHONE]' },
+    ];
+    this.generatePreviewTables();
+    this.fileReady = true;
   }
 
   isUserFormVisible = false;
@@ -84,6 +85,8 @@ export class MaskingFile implements OnInit {
         this.fileReady = true;
       };
       reader.readAsText(file);
+
+      this.generatePreviewTables();
     }
 
     console.log("TESTING RANDOMIZED CONTENT")
@@ -135,6 +138,7 @@ export class MaskingFile implements OnInit {
 
     return result;
   }
+
   onDownload(): void {
     console.log('Downloading compared file...');
     const blob = new Blob([this.maskedContent], { type: 'text/plain' });
@@ -148,32 +152,18 @@ export class MaskingFile implements OnInit {
 
   // user masking
   userMasking(): void {
-    this.activePreviewType = null; // 💥 sembunyikan semua preview tabel
+    this.replacementLog = []; // reset log
+    this.activePreviewType = 'value';
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
 
-    this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsUser, this.replacementTermsUser);
-
-    console.log('🧑‍💻 User Replacement Log:', this.replacementLog);
-    this.replacementLog.forEach(log =>
-      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-    );
-    // You can optionally store this for later use in the UI:
-    // this.replacementLog = replacementLog;
-  }
-
-  applyCustomUserMasking(): void {
-    const effectiveReplacements: string[] = this.searchTermsCategory.map((_, i) =>
-      this.customUserReplacements[i]?.trim() || this.replacementTermsCategory[i]
+    this.maskedContent = this.replaceFromArray(
+      this.originalContent,
+      this.searchTermsUser,
+      this.replacementTermsUser
     );
 
-    this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsCategory, effectiveReplacements);
-
-    console.log('🧑‍💻 Custom User Masking Applied:', this.replacementLog);
-    console.log('🧑‍💻 User Replacement Log:', this.replacementLog);
-    this.replacementLog.forEach(log =>
-      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-    );
+    this.generatePreviewTables();
   }
 
   replaceFromArray(content: string, searchTerms: string[], replacementTerms: string[]): string {
@@ -191,22 +181,9 @@ export class MaskingFile implements OnInit {
     return result;
   }
 
-  // Utility to escape special RegExp characters in search terms
   escapeRegExp(str: string): string {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
-
-  // label category
-  // labelCategory(): void {
-  //   this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsCategory, this.replacementTermsCategory);
-
-  //   console.log('🧑‍💻 Label Category Replacement Log:', this.replacementLog);
-  //   this.replacementLog.forEach(log =>
-  //     console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-  //   );
-  //   // You can optionally store this for later use in the UI:
-  //   // this.replacementLog = replacementLog;
-  // }
 
   // randomized
   randomStr(length: number, chars: string): string {
@@ -216,9 +193,6 @@ export class MaskingFile implements OnInit {
   }
 
   // randomizeSpecificContent(
-  // typeOrFormat: '[EMAIL]' | '[PHONE]' | '[NAME]' | '[NUMBER]' | '[MIXED]' | '[DATE]' | '[TEXT]' |
-  //         'email' | 'phone' | 'text' | 'number' | 'mixed' | 'date',
-  // length: number = 8
   randomizeSpecificContent(
   typeOrFormat: string = 'mixed',
   length: number = 8
@@ -314,17 +288,20 @@ export class MaskingFile implements OnInit {
     let result = this.originalContent;
     this.replacementLog = []; // Clear previous log
 
-  for (let i = 0; i < this.searchTermsCategory.length; i++) {
+    for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const term = this.searchTermsCategory[i];
-    const type = this.replacementTermsCategory[i] || '[TEXT]';
+      const type = this.replacementTermsCategory[i] || '[TEXT]';
 
-      const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
-      result = result.replace(searchRegex, (match) => {
-        const replacement = this.randomizeSpecificContent(type, term.length);
-        this.replacementLog.push({ original: match, replaced: replacement });
-        return replacement;
-    });
-  }
+        const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
+        result = result.replace(searchRegex, (match) => {
+          const replacement = this.randomizeSpecificContent(type, term.length);
+          this.replacementLog.push({ original: match, replaced: replacement });
+          return replacement;
+      });
+
+      this.generatePreviewTables();
+
+    }
 
     this.maskedContent = result;
 
@@ -333,36 +310,36 @@ export class MaskingFile implements OnInit {
       console.log(`original: ${log.original} | replaced: ${log.replaced}`)
   );
 
-  this.isPostMaskingOptionsVisible = true;
-}
+  // this.isPostMaskingOptionsVisible = true;
+  }
 
 
-sameDataRandomized(): void {
+  sameDataRandomized(): void {
   this.replacementTermsRandomized = [];
   this.randomizedPreview = [];
   this.activePreviewType = 'same';
 
-  for (let i = 0; i < this.replacementTermsCategory.length; i++) {
-    const original = this.searchTermsDataRandomized[i];
-    const type = this.replacementTermsCategory[i];
-    const randomized = this.randomizeSpecificContent(type, original.length);    this.replacementTermsRandomized.push(randomized);
-    this.randomizedPreview.push({
-      term: original,
-      type: type,
-      result: randomized
-    });
-  }
+    for (let i = 0; i < this.replacementTermsCategory.length; i++) {
+      const original = this.searchTermsDataRandomized[i];
+      const type = this.replacementTermsCategory[i];
+      const randomized = this.randomizeSpecificContent(type, original.length);    this.replacementTermsRandomized.push(randomized);
+      this.randomizedPreview.push({
+        term: original,
+        type: type,
+        result: randomized
+      });
+
+      this.generatePreviewTables();
+
+    }
 
     this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsDataRandomized, this.replacementTermsRandomized);
 
-  console.log('🔍 Same Data Replacement Log:', this.replacementLog);
-  this.replacementLog.forEach(log =>
-    console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-  );
-
-  this.isPostMaskingOptionsVisible = true;
-}
-
+    console.log('🔍 Same Data Replacement Log:', this.replacementLog);
+    this.replacementLog.forEach(log =>
+      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
+    );
+  }
 
   isCategoryTableVisible = false;
   labelCategoryTable: Array<{ category: string, text: string, count: number }> = [];
@@ -370,8 +347,7 @@ sameDataRandomized(): void {
   labelCategory(): void {
     this.replacementLog = [];
 
-      // Reset semua tampilan lain
-    this.activePreviewType = 'label';
+    this.activePreviewType = 'category';
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
 
@@ -384,6 +360,9 @@ sameDataRandomized(): void {
       while ((match = regex.exec(this.originalContent)) !== null) {
         this.replacementLog.push({ original: match[0], replaced: replace });
       }
+
+      this.generatePreviewTables();
+
     }
 
     const categoryMap = new Map<string, { text: string, count: number }>();
@@ -420,52 +399,134 @@ sameDataRandomized(): void {
       console.log(`original: ${log.original} | replaced: ${log.replaced}`)
     );
 
-    this.isPostMaskingOptionsVisible = true;
   }
 
-  addNewWord(): void {
-  if (this.newWord.trim()) {
-    this.searchTermsUser.push(this.newWord.trim());
-    this.replacementTermsUser.push('[USER_ADDED]');
-    this.newWord = '';
-    alert('Word added to masking list.');
-  }
-}
+  applyMaskingStyle(): void {
+    const applyMask = (word: string): string => {
+      switch (this.maskingStyle) {
+        case 'redact': return '[REDACTED]';
+        case 'full': return '*'.repeat(word.length);
+        case 'partial':
+          const visible = Math.ceil(word.length * 0.3);
+          return word.slice(0, visible) + '*'.repeat(word.length - visible);
+        default: return word;
+      }
+    };
 
-excludeWordFromMasking(): void {
-  if (this.excludeWord.trim()) {
-    this.excludedWords.push(this.excludeWord.trim());
-    this.excludeWord = '';
-    alert('Word excluded from masking.');
-  }
-}
+    // this.replacementLog = this.replacementLog.map(log => {
+    //   if (this.excludedWords.includes(log.original)) return log; // skip if excluded
+    //   return { original: log.original, replaced: applyMask(log.original) };
+    // });
 
-applyMaskingStyle(): void {
-  const applyMask = (word: string): string => {
-    switch (this.maskingStyle) {
-      case 'redact': return '[REDACTED]';
-      case 'full': return '*'.repeat(word.length);
-      case 'partial':
-        const visible = Math.ceil(word.length * 0.3);
-        return word.slice(0, visible) + '*'.repeat(word.length - visible);
-      default: return word;
+    // Ulangi masking dengan style baru
+    this.maskedContent = this.replaceFromArray(
+      this.originalContent,
+      this.replacementLog.map(l => l.original),
+      this.replacementLog.map(l => l.replaced)
+    );
+
+    console.log(`🎭 Applied style '${this.maskingStyle}'`);
+  }
+
+  generatePreviewTables(): void {
+    // VALUE + CATEGORY Table
+    const mapVC = new Map<string, { type: string, masked: string, count: number }>();
+    for (let i = 0; i < this.replacementLog.length; i++) {
+      const ori = this.replacementLog[i].original;
+      const masked = this.replacementLog[i].replaced;
+
+      // Ambil tipe/kategori berdasarkan index dari searchTermsCategory
+      const index = this.searchTermsCategory.findIndex(term => term === ori);
+      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
+
+      if (!mapVC.has(ori)) {
+        mapVC.set(ori, { type, masked, count: 1 });
+      } else {
+        mapVC.get(ori)!.count += 1;
+      }
     }
-  };
 
-  this.replacementLog = this.replacementLog.map(log => {
-    if (this.excludedWords.includes(log.original)) return log; // skip if excluded
-    return { original: log.original, replaced: applyMask(log.original) };
-  });
+    this.valueCategoryTable = Array.from(mapVC.entries()).map(([ori, val]) => ({
+        ori,
+      type: val.type,
+      masked: val.masked,
+      count: val.count
+    }));
 
-  // Ulangi masking dengan style baru
-  this.maskedContent = this.replaceFromArray(
-    this.originalContent,
-    this.replacementLog.map(l => l.original),
-    this.replacementLog.map(l => l.replaced)
-  );
+    // CATEGORY ONLY Table (1 baris per kategori)
+    const mapCat = new Map<string, { examples: Set<string>; count: number }>();
+    for (let log of this.replacementLog) {
+      const masked = log.replaced;
+      const original = log.original;
 
-  console.log(`🎭 Applied style '${this.maskingStyle}'`);
-}
+      if (!mapCat.has(masked)) {
+        mapCat.set(masked, { examples: new Set([original]), count: 1 });
+      } else {
+        mapCat.get(masked)!.examples.add(original);
+        mapCat.get(masked)!.count += 1;
+      }
+    }
 
+    this.categoryOnlyTable = Array.from(mapCat.entries()).map(([masked, data]) => ({
+      ori: Array.from(data.examples).join(', '),
+      masked,
+      count: data.count
+    }));
+
+    // VALUE ONLY Table (1 baris per original)
+    const mapVal = new Map<string, { type: string, masked: string }>();
+    for (let i = 0; i < this.replacementLog.length; i++) {
+      const ori = this.replacementLog[i].original;
+      const masked = this.replacementLog[i].replaced;
+
+      const index = this.searchTermsCategory.findIndex(term => term === ori);
+      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
+
+      mapVal.set(ori, { type, masked }); // biarkan overwrite → ambil latest masking
+    }
+
+    this.valueOnlyTable = Array.from(mapVal.entries()).map(([ori, val]) => ({
+      ori,
+      type: val.type,
+      masked: val.masked
+    }));
+  }
+
+  onWordClick(word: string): void {
+    const alreadyExists = this.searchTermsUser.includes(word);
+    if (!alreadyExists) {
+      this.searchTermsUser.push(word);
+      this.replacementTermsUser.push('[USER_ADDED]');
+
+      // Tambah ke log buat preview table
+      this.replacementLog.push({ original: word, replaced: '[USER_ADDED]' });
+
+      this.generatePreviewTables();
+      }
+    }
+
+  removePreviewRow(word: string): void {
+    // Hapus dari searchTerms & replacementTerms
+    const idx = this.searchTermsUser.indexOf(word);
+    if (idx !== -1) {
+      this.searchTermsUser.splice(idx, 1);
+      this.replacementTermsUser.splice(idx, 1);
+    }
+
+    // Hapus dari replacementLog
+    this.replacementLog = this.replacementLog.filter(log => log.original !== word);
+
+    // Regenerate maskedContent & preview
+    this.maskedContent = this.replaceFromArray(
+      this.originalContent,
+      this.replacementLog.map(r => r.original),
+      this.replacementLog.map(r => r.replaced)
+    );
+    this.generatePreviewTables();
+  }
+
+  handleClick(buttonId: string): void {
+    this.clickedButton = buttonId;
+  }
 
 }

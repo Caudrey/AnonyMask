@@ -128,7 +128,16 @@
     <div class="grid-cols">
       <div>
         <h4>📄 Original File</h4>
-        <pre>{{ originalContent }}</pre>
+        <div class="text-preview">
+         <ng-container *ngFor="let word of originalContent.split(' ')">
+            <span class="hover-word" (click)="onWordClick(word)">{{ word }}</span>&nbsp;
+          </ng-container>
+        </div>
+        <!-- <pre>
+          <ng-container *ngFor="let word of originalContent.split('')">
+            <span class="hover-word" (click)="onWordClick(word)">{{ word }}</span>&nbsp;
+          </ng-container>
+        </pre> -->
       </div>
       <div>
         <h4>🛡️ Masked Output</h4>
@@ -137,57 +146,46 @@
     </div>
   </div>
 
-  <!-- Option B -->
-  <div *ngIf="fileReady" class="preview-box">
-    <h3 class="preview-title">Option B: Card Layout</h3>
+  <!-- <div *ngIf="fileReady">
+    <h3 class="subtitle">Option B: Card Layout</h3>
     <div class="card-grid">
       <div class="card">
-        <h4>📄 Original File</h4>
+        <h4>Original</h4>
         <pre>{{ originalContent }}</pre>
       </div>
       <div class="card">
-        <h4>🛡️ Masked Output</h4>
+        <h4>Masked</h4>
         <pre class="masked">{{ maskedContent }}</pre>
       </div>
     </div>
   </div>
 
-  <!-- Option C -->
-  <div *ngIf="fileReady" class="preview-box">
-    <h3 class="preview-title">Option C: Line-by-line Diff</h3>
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option C: Line-by-line Diff</h3>
     <div class="diff-block">
-      <div
-        *ngFor="let line of getDiffLines()"
-        [ngClass]="line.changed ? 'changed' : 'unchanged'"
-      >
+      <div *ngFor="let line of getDiffLines()" [ngClass]="line.changed ? 'changed' : 'unchanged'">
         {{ line.line }}
       </div>
     </div>
   </div>
 
-  <!-- Option D -->
-  <div *ngIf="fileReady" class="preview-box">
-    <h3 class="preview-title">Option D: Line-by-line Table Diff</h3>
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option D: Line-by-line Diff</h3>
     <div class="diff-table">
       <div class="diff-header">
-        <span>📄 Original File</span>
-        <span>🛡️ Masked Output</span>
+        <span>📄 Original</span>
+        <span>🛡️ Masked</span>
       </div>
 
       <div *ngFor="let line of getDiffLines2()" class="diff-row">
-        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">
-          {{ line.original }}
-        </div>
-        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">
-          {{ line.masked }}
-        </div>
+        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.original }}</div>
+        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.masked }}</div>
       </div>
     </div>
   </div>
 
-  <!-- Option E -->
-  <div *ngIf="fileReady" class="preview-box">
-    <h3 class="preview-title">Option E: Side-by-Side Line Diff</h3>
+  <div *ngIf="fileReady">
+    <h3 class="subtitle">Option E: Clean Diff Layout with Highlight</h3>
     <div class="grid-cols">
       <div>
         <h4>📄 Original File</h4>
@@ -199,149 +197,120 @@
             {{ line.original }}
           </div>
         </div>
-      </div>
+      </div> -->
 
-      <div>
-        <h4>🛡️ Masked Output</h4>
-        <div class="diff-box">
-          <div
-            *ngFor="let line of getDiffLines2()"
-            [ngClass]="line.changed ? 'changed' : 'unchanged'"
-          >
-            {{ line.masked }}
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="mini-navbar" *ngIf="fileReady">
+    <button
+      [ngClass]="{ 'clicked': clickedButton === 'value-category' }"
+      (click)="applyLabelCategoryReplacement(); handleClick('value-category')"
+    >🎯 VALUE + CATEGORY</button>
+
+    <button
+      [ngClass]="{ 'clicked': clickedButton === 'category' }"
+      (click)="labelCategory(); handleClick('category')"
+    >🏷️ CATEGORY</button>
+
+    <button
+      [ngClass]="{ 'clicked': clickedButton === 'value' }"
+      (click)="userMasking(); handleClick('value')"
+    >💡 VALUE</button>
+
+    <button
+      [ngClass]="{ 'clicked': clickedButton === 'all-randomized' }"
+      (click)="allRandomized(); handleClick('all-randomized')"
+    >🎲 ALL RANDOMIZED</button>
+
+    <button
+      [ngClass]="{ 'clicked': clickedButton === 'same-randomized' }"
+      (click)="sameDataRandomized(); handleClick('same-randomized')"
+    >🔁 SAME DATA RANDOMIZED</button>
   </div>
-</div>
 
-<!-- Mini Navbar -->
-<div class="mini-navbar">
-<button (click)="toggleUserForm()">🧑 User Masking</button>
-  <button (click)="labelCategory()">🏷️ Label Category</button>
-  <button (click)="allRandomized()">🎲 All Randomizes</button>
-  <button (click)="sameDataRandomized()">🎯 Same Data Randomized</button>
-</div>
 
-<!-- Tabel hasil analisis -->
-<div *ngIf="activePreviewType === 'label'" class="category-table-container">
-  <h3>Label Category Result</h3>
-  <table>
+  <!-- TABEL OUTPUT BERDASARKAN TIPE -->
+  <table *ngIf="activePreviewType === 'valueCategory'">
     <thead>
       <tr>
-        <th>Category</th>
-        <th>Text</th>
+        <th>Original Text</th>
+        <th>Masked Result</th>
         <th>Count</th>
+        <th>🗑️</th> <!-- Kolom hapus -->
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of labelCategoryTable">
-        <td>{{ row.category }}</td>
-        <td>{{ row.text }}</td>
+      <tr *ngFor="let row of valueCategoryTable; let i = index">
+        <td>{{ row.ori }}</td>
+        <td>{{ row.masked }}</td>
         <td>{{ row.count }}</td>
+        <td>
+          <button class="remove-btn" (click)="removePreviewRow(row.ori)">
+            -
+          </button>
+        </td>
       </tr>
     </tbody>
   </table>
 
-  <!-- Tombol untuk apply kategori -->
-  <div class="apply-button-wrapper">
-    <button (click)="applyLabelCategoryReplacement()">🔁 Ganti Sesuai Kategori</button>
-  </div>
-</div>
 
-<!-- ✅ Form input custom user masking -->
-<div *ngIf="isUserFormVisible && fileReady" class="user-replacement-box">
-  <h3 class="preview-title">🧑‍💻 Custom Replacement per Category</h3>
-  <form (ngSubmit)="applyCustomUserMasking()" #userForm="ngForm">
-    <div class="form-grid">
-      <div *ngFor="let term of searchTermsCategory; let i = index" class="form-row">
-        <label>{{ replacementTermsCategory[i] }}:</label>
-        <input
-          type="text"
-          [(ngModel)]="customUserReplacements[i]"
-          name="replacement-{{ i }}"
-          placeholder="Enter custom replacement..."
-        />
-      </div>
-    </div>
+  <table *ngIf="activePreviewType === 'category'">
+    <thead><tr><th>ori</th><th>masked</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let row of categoryOnlyTable">
+        <td>{{ row.ori }}</td>
+        <td>{{ row.masked }}</td>
+      </tr>
+    </tbody>
+  </table>
 
-    <button type="submit" class="apply-button">🔁 Apply Custom Masking</button>
-  </form>
-</div>
-
-<!-- Preview untuk Same Data Randomized -->
-<div *ngIf="activePreviewType === 'same'" class="randomized-preview-box">
-  <h3>🔍 Randomized Preview (Same Data)</h3>
-  <table>
+  <table *ngIf="activePreviewType === 'value'" class="custom-table">
     <thead>
       <tr>
-        <th>Original</th>
-        <th>Type</th>
-        <th>Randomized Result</th>
+        <th>Original Text</th>
+        <th>Type/Category</th>
+        <th>Masked Result</th>
+        <th></th>
       </tr>
     </thead>
+    <tbody>
+      <tr *ngFor="let row of valueOnlyTable; let i = index">
+        <td>{{ row.ori }}</td>
+        <td>{{ row.type }}</td>
+        <td>
+          <input [(ngModel)]="row.masked" class="masked-input" />
+        </td>
+      <td>
+          <div class="btn-wrapper">
+            <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+
+  <table *ngIf="activePreviewType === 'all'">
+    <thead><tr><th>ori</th><th>masked</th></tr></thead>
+    <tbody>
+      <tr *ngFor="let row of replacementLog">
+        <td>{{ row.original }}</td>
+        <td>{{ row.replaced }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table *ngIf="activePreviewType === 'same'">
+    <thead><tr><th>ori</th><th>masked</th></tr></thead>
     <tbody>
       <tr *ngFor="let row of randomizedPreview">
         <td>{{ row.term }}</td>
-        <td>{{ row.type }}</td>
         <td>{{ row.result }}</td>
       </tr>
     </tbody>
   </table>
 </div>
 
-<!-- Preview untuk All Randomized -->
-<div *ngIf="activePreviewType === 'all'" class="randomized-preview-box">
-  <h3>🎲 All Randomized Preview</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>Original</th>
-        <th>Type</th>
-        <th>Randomized Result</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let row of allRandomizedPreview">
-        <td>{{ row.term }}</td>
-        <td>{{ row.type }}</td>
-        <td>{{ row.result }}</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-
-
-<!-- Hasil akhir -->
+<!-- Hasil akhir
 <div *ngIf="maskedContent">
   <h3>Hasil Masking:</h3>
-  <p>{{ maskedContent }}</p>
-</div>
-
-<div *ngIf="isPostMaskingOptionsVisible" class="post-masking-options">
-  <h3>⚙️ Post-Masking Options</h3>
-
-  <div class="option-group">
-    <label for="newWord">➕ Add New Word:</label>
-    <input id="newWord" [(ngModel)]="newWord" placeholder="Enter word to mask" />
-    <button (click)="addNewWord()">Add</button>
-  </div>
-
-  <div class="option-group">
-    <label for="excludeWord">🚫 Exclude Word:</label>
-    <input id="excludeWord" [(ngModel)]="excludeWord" placeholder="Enter word to exclude" />
-    <button (click)="excludeWordFromMasking()">Exclude</button>
-  </div>
-
-  <div class="option-group">
-    <label>🛡️ Masking Style:</label>
-    <select [(ngModel)]="maskingStyle" (change)="applyMaskingStyle()">
-      <option value="redact">Redact (e.g. [REDACTED])</option>
-      <option value="full">Fully Mask (e.g. *******)</option>
-      <option value="partial">Partial Mask (e.g. J*** D***)</option>
-    </select>
-  </div>
-</div>
-
+<p>{{ maskedContent }}</p>
+</div> -->
