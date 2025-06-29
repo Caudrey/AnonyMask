@@ -276,7 +276,7 @@ export class MaskingFile implements OnInit {
 
   downloadTextFile(): void {
     const blob = new Blob([this.maskedContent], { type: 'text/plain' });
-    this.triggerDownload(blob, 'masked_' + this.fileName);
+    this.triggerDownload(blob, this.fileName);
   }
 
   downloadPdfFile(): void {
@@ -318,7 +318,7 @@ export class MaskingFile implements OnInit {
     });
 
     Packer.toBlob(doc).then(blob => {
-      this.triggerDownload(blob, 'masked_' + this.fileName);
+      this.triggerDownload(blob, this.fileName);
     });
   }
 
