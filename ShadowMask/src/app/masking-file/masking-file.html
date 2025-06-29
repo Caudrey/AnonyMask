@@ -124,24 +124,32 @@
 
   <!-- Option A -->
   <div *ngIf="fileReady" class="preview-box">
-    <h3 class="preview-title">Option A: Clean Layout</h3>
+  <h3 class="preview-title">🔐 Masking Preview</h3>
     <div class="grid-cols">
       <div>
-        <h4>📄 Original File</h4>
+        <h4>📜 Original Content</h4>
         <div class="text-preview">
-         <ng-container *ngFor="let word of originalContent.split(' ')">
-            <span class="hover-word" (click)="onWordClick(word)">{{ word }}</span>&nbsp;
+          <ng-container *ngFor="let token of originalTokensWithDiff">
+            <span
+              [ngClass]="{ 'highlight-masked': token.changed }"
+              (click)="onWordClick(token.word)"
+              class="clickable-word"
+            >
+              {{ token.word }}
+            </span>
+            <span>&nbsp;</span>
           </ng-container>
         </div>
-        <!-- <pre>
-          <ng-container *ngFor="let word of originalContent.split('')">
-            <span class="hover-word" (click)="onWordClick(word)">{{ word }}</span>&nbsp;
-          </ng-container>
-        </pre> -->
       </div>
+
       <div>
         <h4>🛡️ Masked Output</h4>
-        <pre class="masked">{{ maskedContent }}</pre>
+          <div class="text-preview">
+            <ng-container *ngFor="let token of maskedTokensWithDiff">
+              <span [ngClass]="{ 'highlight-masked': token.changed }">{{ token.word }}</span>
+              <span>&nbsp;</span>
+            </ng-container>
+          </div>
       </div>
     </div>
   </div>
@@ -199,7 +207,14 @@
         </div>
       </div> -->
 
-  <div class="mini-navbar" *ngIf="fileReady">
+      <div class="mask-selection">
+        <h3>🔐 Choose Masking Mode</h3>
+        <button (click)="selectMaskType('partial'); resetAllPreviews()">🧩 Partial Mask</button>
+        <button (click)="selectMaskType('full'); resetAllPreviews()">🛡️ Fully Mask</button>
+      </div>
+
+
+  <div class="mini-navbar" *ngIf="fileReady  && selectedMaskType === 'full'">
     <button
       [ngClass]="{ 'clicked': clickedButton === 'value-category' }"
       (click)="applyLabelCategoryReplacement(); handleClick('value-category')"
@@ -232,20 +247,22 @@
     <thead>
       <tr>
         <th>Original Text</th>
+        <th>Type/Category</th>
         <th>Masked Result</th>
         <th>Count</th>
-        <th>🗑️</th> <!-- Kolom hapus -->
+        <th></th> <!-- Kolom hapus -->
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let row of valueCategoryTable; let i = index">
         <td>{{ row.ori }}</td>
+        <td>{{ row.type }}</td>
         <td>{{ row.masked }}</td>
         <td>{{ row.count }}</td>
         <td>
-          <button class="remove-btn" (click)="removePreviewRow(row.ori)">
-            -
-          </button>
+          <div class="btn-wrapper">
+            <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
+          </div>
         </td>
       </tr>
     </tbody>
@@ -253,11 +270,25 @@
 
 
   <table *ngIf="activePreviewType === 'category'">
-    <thead><tr><th>ori</th><th>masked</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Original Text</th>
+        <th>Type/Category</th>
+        <th>Masked Result</th>
+        <th>Count</th>
+        <th></th> <!-- Kolom hapus -->
+      </tr></thead>
     <tbody>
       <tr *ngFor="let row of categoryOnlyTable">
         <td>{{ row.ori }}</td>
+        <td>{{ row.type }}</td>
         <td>{{ row.masked }}</td>
+        <td>{{ row.count }}</td>
+        <td>
+          <div class="btn-wrapper">
+            <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>
@@ -276,7 +307,11 @@
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
         <td>
-          <input [(ngModel)]="row.masked" class="masked-input" />
+          <!-- <input [(ngModel)]="row.masked" class="masked-input" /> -->
+          <input
+            [(ngModel)]="row.masked"
+            (blur)="onMaskedValueChange(row.ori, row.masked)"
+            class="masked-input" />
         </td>
       <td>
           <div class="btn-wrapper">
@@ -289,25 +324,114 @@
 
 
   <table *ngIf="activePreviewType === 'all'">
-    <thead><tr><th>ori</th><th>masked</th></tr></thead>
+    <!-- <thead><tr><th>ori</th><th>masked</th></tr></thead>
     <tbody>
       <tr *ngFor="let row of replacementLog">
         <td>{{ row.original }}</td>
         <td>{{ row.replaced }}</td>
       </tr>
+    </tbody> -->
+    <thead>
+      <tr>
+        <th>Original Text</th>
+        <th>Type/Category</th>
+        <th>Masked Result</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of valueOnlyTable; let i = index">
+        <td>{{ row.ori }}</td>
+        <td>{{ row.type }}</td>
+        <td>
+          <input
+            [(ngModel)]="row.masked"
+            (blur)="onMaskedValueChange(row.ori, row.masked)"
+            class="masked-input" />
+        </td>
+      <td>
+          <div class="btn-wrapper">
+            <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
+          </div>
+        </td>
+      </tr>
     </tbody>
   </table>
 
   <table *ngIf="activePreviewType === 'same'">
-    <thead><tr><th>ori</th><th>masked</th></tr></thead>
+    <!-- <thead><tr><th>ori</th><th>masked</th></tr></thead>
     <tbody>
       <tr *ngFor="let row of randomizedPreview">
-        <td>{{ row.term }}</td>
+        <td>{{ row.ori }}</td>
         <td>{{ row.result }}</td>
+      </tr>
+    </tbody> -->
+    <thead>
+      <tr>
+        <th>Original Text</th>
+        <th>Type/Category</th>
+        <th>Masked Result</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let row of randomizedPreview">
+        <td>{{ row.ori }}</td>
+        <td>{{ row.type }}</td>
+        <!-- <td>
+          <input
+            [(ngModel)]="row.masked"
+            (blur)="onMaskedValueChange(row.ori, row.masked)"
+            class="masked-input" />
+        </td> -->
+         <td>{{ row.result }}</td>
+      <td>
+          <div class="btn-wrapper">
+            <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
+          </div>
+        </td>
       </tr>
     </tbody>
   </table>
+
+  <div class="mini-navbar" *ngIf="fileReady && selectedMaskType === 'partial'">
+    <button
+      [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
+      (click)="handlePartialClick('redact')"
+    >✂ Redact Mask</button>
+
+    <button
+      [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
+      (click)="handlePartialClick('prefix-suffix')"
+    >🧩 Prefix & Suffix Mask</button>
+  </div>
+  <!-- TABEL PREVIEW UNTUK PARTIAL MASKING -->
+  <div
+    *ngIf="selectedMaskType === 'partial' && clickedPartialButton && partialMaskedStats.length > 0"
+    class="mapping-table-box"
+  >
+    <h4 class="preview-title">🧪 Preview for Partial Masking ({{ clickedPartialButton.toUpperCase() }})</h4>
+    <table class="mapping-table">
+      <thead>
+        <tr>
+          <th>🔤 Original Text</th>
+          <th *ngIf="clickedPartialButton === 'prefix-suffix'">🔧 Masked Text </th>
+          <th>🔢 Count</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of partialMaskedStats">
+          <td>{{ item.word }}</td>
+          <td *ngIf="clickedPartialButton === 'prefix-suffix'">{{ item.format }}</td>
+          <td>{{ item.count }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>
+
+
 
 <!-- Hasil akhir
 <div *ngIf="maskedContent">

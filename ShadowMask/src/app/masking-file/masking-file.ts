@@ -35,30 +35,43 @@ export class MaskingFile implements OnInit {
 
   customUserReplacements: string[] = [];
 
-  randomizedPreview: Array<{ term: string, type: string, result: string }> = [];
+  randomizedPreview: Array<{ ori: string, type: string, result: string }> = [];
 
-  allRandomizedPreview: Array<{ term: string, type: string, result: string }> = [];
+  allRandomizedPreview: Array<{ ori: string, type: string, result: string }> = [];
 
   activePreviewType: 'valueCategory' | 'category' | 'value' | 'all' | 'same' | null = null;
 
   valueCategoryTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
 
-  categoryOnlyTable: Array<{ ori: string; masked: string; count: number }> = [];
+  categoryOnlyTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
 
   valueOnlyTable: Array<{ ori: string; type: string; masked: string }> = [];
+
+  selectedMaskType: 'partial' | 'full' | null = null;
+
+  clickedPartialButton: string | null = null;
+
+  partialMaskedStats: { word: string; count: number; format?: string }[] = [];
+  originalTokensWithDiff: { word: string; changed: boolean }[] = [];
+  maskedTokensWithDiff: { word: string; changed: boolean }[] = [];
 
   isClicked = false;
   clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
 
   ngOnInit(): void {
-    this.originalContent = "Hi my email is john@example.com and. phone is 1234567890. Makan";
+    this.originalContent = `Hi
+    my email
+     is john@example.com
+      and phone is 1234567890.
+      Makan`;
     this.maskedContent = "[MASKED]";
     this.replacementLog = [
       { original: 'john@example.com', replaced: '[EMAIL]' },
       { original: '1234567890', replaced: '[PHONE]' },
     ];
     this.generatePreviewTables();
+    this.generateDiffTokens();
     this.fileReady = true;
   }
 
@@ -87,6 +100,7 @@ export class MaskingFile implements OnInit {
       reader.readAsText(file);
 
       this.generatePreviewTables();
+      this.generateDiffTokens();
     }
 
     console.log("TESTING RANDOMIZED CONTENT")
@@ -164,6 +178,7 @@ export class MaskingFile implements OnInit {
     );
 
     this.generatePreviewTables();
+    this.generateDiffTokens();
   }
 
   replaceFromArray(content: string, searchTerms: string[], replacementTerms: string[]): string {
@@ -171,11 +186,20 @@ export class MaskingFile implements OnInit {
     this.replacementLog = []; // Clear previous log
 
     for (let i = 0; i < searchTerms.length; i++) {
-      const searchRegex = new RegExp(this.escapeRegExp(searchTerms[i]), 'g');
-      result = result.replace(searchRegex, (match) => {
-        this.replacementLog.push({ original: match, replaced: replacementTerms[i] });
-        return replacementTerms[i];
-      });
+    const searchRegex = new RegExp(this.escapeRegExp(searchTerms[i]), 'g');
+
+    result = result.replace(searchRegex, (match) => {
+          this.replacementLog.push({ original: match, replaced: replacementTerms[i] });
+          return replacementTerms[i];
+    });
+
+    //   // Regex: cari term yang bisa diikuti tanda baca (tapi bukan bagian dari term)
+    //   const searchRegex = new RegExp(`\\b(${this.escapeRegExp(searchTerms[i])})([.,!?;:]?)\\b`, 'g');
+    //   result = result.replace(searchRegex, (match, p1, punc) => {
+    //   this.replacementLog.push({ original: p1, replaced: replacementTerms[i] });
+    //   return replacementTerms[i] + (punc || '');
+    // });
+
     }
 
     return result;
@@ -287,6 +311,9 @@ export class MaskingFile implements OnInit {
   allRandomized(): void {
     let result = this.originalContent;
     this.replacementLog = []; // Clear previous log
+    this.randomizedPreview = [];
+    this.activePreviewType = 'all';
+
 
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const term = this.searchTermsCategory[i];
@@ -298,12 +325,11 @@ export class MaskingFile implements OnInit {
           this.replacementLog.push({ original: match, replaced: replacement });
           return replacement;
       });
-
-      this.generatePreviewTables();
-
     }
 
     this.maskedContent = result;
+    this.generatePreviewTables();
+    this.generateDiffTokens();
 
     console.log("🔍 All Replacement Log:", this.replacementLog);
     this.replacementLog.forEach(log =>
@@ -316,21 +342,24 @@ export class MaskingFile implements OnInit {
 
   sameDataRandomized(): void {
   this.replacementTermsRandomized = [];
+  this.replacementLog = [];
   this.randomizedPreview = [];
   this.activePreviewType = 'same';
+  this.allRandomizedPreview = [];
+
 
     for (let i = 0; i < this.replacementTermsCategory.length; i++) {
       const original = this.searchTermsDataRandomized[i];
       const type = this.replacementTermsCategory[i];
       const randomized = this.randomizeSpecificContent(type, original.length);    this.replacementTermsRandomized.push(randomized);
       this.randomizedPreview.push({
-        term: original,
+        ori: original,
         type: type,
         result: randomized
       });
 
       this.generatePreviewTables();
-
+      this.generateDiffTokens();
     }
 
     this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsDataRandomized, this.replacementTermsRandomized);
@@ -362,7 +391,7 @@ export class MaskingFile implements OnInit {
       }
 
       this.generatePreviewTables();
-
+      this.generateDiffTokens();
     }
 
     const categoryMap = new Map<string, { text: string, count: number }>();
@@ -388,6 +417,12 @@ export class MaskingFile implements OnInit {
   }
 
   applyLabelCategoryReplacement(): void {
+    this.activePreviewType = 'valueCategory';
+
+    this.replacementLog = [];
+    this.randomizedPreview = [];
+    this.allRandomizedPreview = [];
+
     this.maskedContent = this.replaceFromArray(
       this.originalContent,
       this.searchTermsCategory,
@@ -399,7 +434,9 @@ export class MaskingFile implements OnInit {
       console.log(`original: ${log.original} | replaced: ${log.replaced}`)
     );
 
+    this.generateDiffTokens();
   }
+
 
   applyMaskingStyle(): void {
     const applyMask = (word: string): string => {
@@ -446,29 +483,41 @@ export class MaskingFile implements OnInit {
       }
     }
 
+    this.generateDiffTokens();
+
     this.valueCategoryTable = Array.from(mapVC.entries()).map(([ori, val]) => ({
-        ori,
+      ori,
       type: val.type,
       masked: val.masked,
       count: val.count
     }));
 
     // CATEGORY ONLY Table (1 baris per kategori)
-    const mapCat = new Map<string, { examples: Set<string>; count: number }>();
+    const mapCat = new Map<string, { examples: Set<string>; count: number; type: string }>();
+
     for (let log of this.replacementLog) {
       const masked = log.replaced;
       const original = log.original;
+      const index = this.searchTermsCategory.findIndex(term => term === original);
+      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
 
       if (!mapCat.has(masked)) {
-        mapCat.set(masked, { examples: new Set([original]), count: 1 });
+        mapCat.set(masked, {
+          examples: new Set([original]),
+          count: 1,
+          type: type // simpan type-nya
+        });
       } else {
         mapCat.get(masked)!.examples.add(original);
         mapCat.get(masked)!.count += 1;
+        // optional: validasi type-nya sama kalau mau aman
       }
     }
 
+
     this.categoryOnlyTable = Array.from(mapCat.entries()).map(([masked, data]) => ({
       ori: Array.from(data.examples).join(', '),
+      type: data.type,
       masked,
       count: data.count
     }));
@@ -492,6 +541,8 @@ export class MaskingFile implements OnInit {
     }));
   }
 
+
+
   onWordClick(word: string): void {
     const alreadyExists = this.searchTermsUser.includes(word);
     if (!alreadyExists) {
@@ -502,6 +553,7 @@ export class MaskingFile implements OnInit {
       this.replacementLog.push({ original: word, replaced: '[USER_ADDED]' });
 
       this.generatePreviewTables();
+      this.generateDiffTokens();
       }
     }
 
@@ -527,6 +579,95 @@ export class MaskingFile implements OnInit {
 
   handleClick(buttonId: string): void {
     this.clickedButton = buttonId;
+  }
+
+  resetAllPreviews() {
+  this.activePreviewType = null;
+  // this.clickedButton = null;
+  this.clickedPartialButton = null;
+  this.replacementLog = [];
+  this.valueCategoryTable = [];
+  this.categoryOnlyTable = [];
+  this.valueOnlyTable = [];
+  this.allRandomizedPreview = [];
+  this.randomizedPreview = [];
+  this.partialMaskedStats = [];
+}
+
+  selectMaskType(type: 'partial' | 'full') {
+    this.selectedMaskType = type;
+  }
+
+  handlePartialClick(type: 'redact' | 'prefix-suffix') {
+    this.clickedPartialButton = type;
+
+    this.replacementLog = [];
+    this.activePreviewType = null;
+    this.valueCategoryTable = [];
+    this.categoryOnlyTable = [];
+    this.valueOnlyTable = [];
+
+    const originalWords = this.originalContent.trim().split(/\s+/);
+    const maskedWords = this.maskedContent.trim().split(/\s+/);
+    const stats: Record<string, { count: number; format?: string }> = {};
+
+    for (let i = 0; i < Math.min(originalWords.length, maskedWords.length); i++) {
+      if (originalWords[i] !== maskedWords[i]) {
+        const word = maskedWords[i];
+
+        if (!stats[word]) {
+          stats[word] = { count: 0 };
+        }
+
+        stats[word].count += 1;
+
+        if (type === 'prefix-suffix') {
+          const prefix = word.slice(0, 2);
+          const suffix = word.slice(-2);
+          stats[word].format = `${prefix}...${suffix}`;
+        }
+      }
+    }
+
+    this.partialMaskedStats = Object.entries(stats).map(([word, info]) => ({
+      word,
+      count: info.count,
+      format: info.format,
+    }));
+  }
+
+  onMaskedValueChange(original: string, newMasked: string): void {
+  // Update maskedContent berdasarkan replacementLog terbaru
+  const updatedLog = this.replacementLog.map(log =>
+    log.original === original
+      ? { ...log, replaced: newMasked }
+      : log
+  );
+
+  this.replacementLog = updatedLog;
+
+  // Regenerate masked content
+  this.maskedContent = this.replaceFromArray(
+    this.originalContent,
+    this.replacementLog.map(r => r.original),
+    this.replacementLog.map(r => r.replaced)
+  );
+
+  this.generatePreviewTables();
+  this.generateDiffTokens();
+  }
+
+  generateDiffTokens(): void {
+    const targets = this.valueOnlyTable.map(item => item.ori);
+
+    const splitTokens = (text: string) =>
+      text.split(/(\s+)/).map(word => ({
+        word,
+        changed: targets.includes(word.trim())
+      }));
+
+    this.originalTokensWithDiff = splitTokens(this.originalContent);
+    this.maskedTokensWithDiff = splitTokens(this.maskedContent);
   }
 
 }
