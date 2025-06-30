@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -7,6 +7,9 @@ import * as mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph } from 'docx';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { ApiService } from '../services/api';
 
 @Component({
   selector: 'app-masking-file',
@@ -64,7 +67,7 @@ export class MaskingFile implements OnInit {
   clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
 
-  constructor() {
+  constructor(private apiService: ApiService) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
       'pdfjs-dist/build/pdf.worker.min.mjs',
       import.meta.url,
@@ -202,27 +205,115 @@ export class MaskingFile implements OnInit {
 
 
   processOriginalContent(): void {
-    this.maskedContent = this.maskPrivacy(this.originalContent);
-    this.fileReady = true;
+    this.maskPrivacy(this.originalContent).subscribe({
+          next: (resultString) => {
+            // This code runs ONLY after the API call is successful
+            console.log("API call successful, result received!");
+            this.maskedContent = resultString;
 
-    console.log("🔍 First Replacement Log:", this.replacementLog);
-    this.replacementLog.forEach(log =>
-      console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-    );
+            this.addPredictionsToSearchLists(this.replacementLog);
 
-    this.generatePreviewTables();
+            // The replacementLog is now set by the API response, so we can generate tables
+            this.generatePreviewTables();
+            this.fileReady = true;
+          },
+          error: (err) => {
+            console.error("API Error:", err);
+            this.fileReady = false; // Optionally show an error state
+          }
+        });
   }
 
 
-  maskPrivacy(content: string): string {
-    this.replacementLog = []; // Clear previous log
-    return content.replace(
-      /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
-      (match) => {
-        console.log("REPLACE: " + match)
-        this.replacementLog.push({ original: match, replaced:  '[MASKED_EMAIL]'});
-        return '[MASKED_EMAIL]';
-      });
+  // maskPrivacy(content: string): string {
+  //   this.replacementLog = []; // Clear previous log
+  //   return content.replace(
+  //     /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+  //     (match) => {
+  //       console.log("REPLACE: " + match)
+  //       this.replacementLog.push({ original: match, replaced:  '[MASKED_EMAIL]'});
+  //       return '[MASKED_EMAIL]';
+  //     });
+  // }
+
+  // The function now returns an Observable that will eventually emit the masked string
+  maskPrivacy(content: string): Observable<string> {
+    // 1. Call your ApiService to get the predictions from the Python model
+    return this.apiService.getPredictions(content).pipe(
+      // 2. Use the 'map' operator to transform the API response into the final masked string
+      map(response => {
+        let maskedContent = content;
+        const predictions = response.predictions;
+
+        // 3. Clear the log and create a new one based on the API's findings
+        this.replacementLog = [];
+
+        if (!predictions) {
+          return content; // Return original content if there are no predictions
+        }
+
+        console.log(predictions)
+        // 4. Loop through the predictions and replace them in the content
+        predictions.forEach((p: { word: string, label: string }) => {
+          const replacement = `[${p.label.replace('B_', '').replace('I_', '')}]`;
+          // Use a regular expression to replace all occurrences of the word
+          const searchRegex = new RegExp(this.escapeRegExp(p.word), 'g');
+
+          maskedContent = maskedContent.replace(searchRegex, replacement);
+
+          this.replacementLog.push({ original: p.word, replaced: replacement });
+        });
+
+        console.log("Log generated from API:", this.replacementLog);
+        return maskedContent;
+      })
+    );
+  }
+
+  addPredictionsToSearchLists(log: { original: string, replaced: string }[]): void {
+    console.log("Updating search lists with AI predictions...");
+    log.forEach(entry => {
+      const originalTerm = entry.original;
+      const categoryTerm = entry.replaced; // e.g., '[SALARY]'
+
+      // Check for duplicates before adding to avoid clutter
+      if (!this.searchTermsCategory.includes(originalTerm)) {
+        // Add to category lists
+        this.searchTermsCategory.push(originalTerm);
+        this.replacementTermsCategory.push(categoryTerm);
+
+        // Add to user-defined lists (with a generic replacement)
+        this.searchTermsUser.push(originalTerm);
+        this.replacementTermsUser.push(categoryTerm);
+
+        // Add to randomized lists so they are included in those functions
+        this.searchTermsAllRandomized.push(originalTerm);
+        this.searchTermsDataRandomized.push(originalTerm);
+
+        console.log(`Added "${originalTerm}" to search lists.`);
+      }
+    });
+  }
+
+  // <-- FIX: New function to sync changes from the editable table back to the master lists
+  updateReplacementsFromTable(): void {
+    console.log("Applying changes from the preview table...");
+
+    // Iterate over the table that the user can edit
+    this.valueOnlyTable.forEach(tableRow => {
+      // Find the index of the original term in our master list for user replacements
+      const index = this.searchTermsUser.indexOf(tableRow.ori);
+
+      // If the term exists in our master list...
+      if (index !== -1) {
+        // ...update the corresponding replacement term with the new value from the input
+        this.replacementTermsUser[index] = tableRow.masked;
+        console.log(`Updated "${tableRow.ori}" to be replaced with "${tableRow.masked}"`);
+      }
+    });
+
+    // Re-apply the 'Value' masking immediately to reflect the changes in the main view
+    this.userMasking();
   }
 
   getDiffLines(): { line: string; changed: boolean }[] {
@@ -437,7 +528,7 @@ export class MaskingFile implements OnInit {
     this.replacementLog = []; // Clear previous log
 
     for (let i = 0; i < searchTerms.length; i++) {
-    const searchRegex = new RegExp(this.escapeRegExp(searchTerms[i]), 'g');
+    const searchRegex = new RegExp('\\b' + this.escapeRegExp(searchTerms[i]) + '\\b', 'g');
 
     result = result.replace(searchRegex, (match) => {
           this.replacementLog.push({ original: match, replaced: replacementTerms[i] });
@@ -483,7 +574,7 @@ export class MaskingFile implements OnInit {
       case '[PHONE]':
         format = 'phone';
         break;
-      case '[NAME]':
+      case '[Nickname]':
         format = 'text';
         break;
       case '[NUMBER]':
@@ -570,11 +661,11 @@ export class MaskingFile implements OnInit {
       const term = this.searchTermsCategory[i];
       const type = this.replacementTermsCategory[i] || '[TEXT]';
 
-        const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
-        result = result.replace(searchRegex, (match) => {
-          const replacement = this.randomizeSpecificContent(type, term.length);
-          this.replacementLog.push({ original: match, replaced: replacement });
-          return replacement;
+      const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
+      result = result.replace(searchRegex, (match) => {
+        const replacement = this.randomizeSpecificContent(type, term.length);
+        this.replacementLog.push({ original: match, replaced: replacement });
+        return replacement;
       });
     }
 
@@ -705,7 +796,6 @@ export class MaskingFile implements OnInit {
     //   if (this.excludedWords.includes(log.original)) return log; // skip if excluded
     //   return { original: log.original, replaced: applyMask(log.original) };
     // });
-
     // Ulangi masking dengan style baru
     this.maskedContent = this.replaceFromArray(
       this.originalContent,
@@ -805,6 +895,8 @@ export class MaskingFile implements OnInit {
 
       this.generatePreviewTables();
       this.generateDiffTokens();
+
+      this.userMasking();
       }
     }
 

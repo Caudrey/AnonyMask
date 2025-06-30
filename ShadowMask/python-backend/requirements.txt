@@ -1,0 +1,7 @@
+torch
+numpy
+setfit
+fastapi
+uvicorn
+transformers
+

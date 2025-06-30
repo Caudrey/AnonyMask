@@ -307,7 +307,7 @@
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
         <td>
-          <!-- <input [(ngModel)]="row.masked" class="masked-input" /> -->
+          <!-- <input [(ngModel)]="row.masked" class="masked-input" (change)="updateReplacementsFromTable()" /> -->
           <input
             [(ngModel)]="row.masked"
             (blur)="onMaskedValueChange(row.ori, row.masked)"
