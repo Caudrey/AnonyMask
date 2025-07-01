@@ -565,75 +565,99 @@ export class MaskingFile implements OnInit {
   ): string {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     const digits = '0123456789';
-    let format: 'email' | 'phone' | 'text' | 'number' | 'mixed' | 'date' = 'text';
-
+    
     switch (typeOrFormat) {
-      case '[EMAIL]':
-        format = 'email';
-        break;
-      case '[PHONE]':
-        format = 'phone';
-        break;
-      case '[Nickname]':
-        format = 'text';
-        break;
-      case '[NUMBER]':
-        format = 'number';
-        break;
-      case '[MIXED]':
-        format = 'mixed';
-        break;
-      case '[DATE]':
-        format = 'date';
-        break;
-      default:
-        format = typeOrFormat as typeof format;
-        break;
-    }
-
-    switch (format) {
-      case 'number':
-        return this.randomStr(length, digits);
-
-      case 'text':
-        return this.randomStr(length, letters);
-
-      case 'email': {
+      // email
+      case '[Mail]':
+      case '[Work_Mail]':
         const userLength = Math.floor(length * 0.6);
         const domainLength = Math.max(3, Math.floor(length * 0.3));
         const user = this.randomStr(userLength, letters + digits);
         const domain = this.randomStr(domainLength, letters);
         return `${user}@${domain}.com`;
-      }
 
-      case 'phone': {
-        const numDigits = Math.max(6, length - 3); // accounting for '+62'
-        return '+62' + this.randomStr(numDigits, digits);
-      }
+      // phone number
+      case '[Phone_Number]':
+      case '[Work_Phone_Number]':
+        const number = Math.max(6, length - 3); // accounting for '+62'
+        return '+62' + this.randomStr(number, digits);
 
-      case 'mixed': {
+      // text only
+      case '[Name]':
+      case '[Nickname]':
+      case '[Location]':
+      case '[POB]':
+      case '[Parent_Name]':
+      case '[Username]':
+      case '[Criminal_Hist]':
+      case '[Edu_Hist]':
+      case '[Med_Hist]':
+      case '[Occ_Hist]':
+      case '[Asset]':
+      case '[Address]':
+      case '[Race]':
+      case '[Religion]':
+      case '[Marr_Status]':
+      case '[Gender]':
+      case '[Blood_Type]':
+        return this.randomStr(length, letters);
+
+      // number only
+      case '[Balance]':
+      case '[Account]':
+      case '[Card_Number]':
+      case '[NIP]':
+      case '[SSN]':
+      case '[Salary]':
+        return this.randomStr(length, digits);
+
+      // mixed - text and number
+      case '[Score]':
         const numLetters = Math.floor(length / 2);
         const numDigits = length - numLetters;
         return this.randomStr(numLetters, letters) + this.randomStr(numDigits, digits);
-      }
 
-      // case 'date': {
-      //   // Random date between 2000-01-01 and 2025-12-31
-      //   const start = new Date(2000, 0, 1).getTime();
-      //   const end = new Date(2025, 11, 31).getTime();
-      //   const randomTime = start + Math.random() * (end - start);
-      //   const date = new Date(randomTime);
-      //   return date.toISOString().split('T')[0]; // e.g. '2014-06-19'
-      // }
-      case 'date': {
+      // date
+      case '[DOB]':
+        //   // Random date between 2000-01-01 and 2025-12-31
+        //   const start = new Date(2000, 0, 1).getTime();
+        //   const end = new Date(2025, 11, 31).getTime();
+        //   const randomTime = start + Math.random() * (end - start);
+        //   const date = new Date(randomTime);
+        //   return date.toISOString().split('T')[0]; // e.g. '2014-06-19'
         const year = this.getRandomInt(1900, 2100);
         const month = this.getRandomInt(1, 12);
         const day = this.getRandomDay(year, month);
         const mm = month.toString().padStart(2, '0');
         const dd = day.toString().padStart(2, '0');
         return `${year}-${mm}-${dd}`; // e.g., "1992-04-15"
-      }
 
+      // cm
+      case '[Body_Height]':
+        return `${this.randomStr(length, digits)} cm`;
+
+      // kg
+      case '[Body_Weight]':
+        return `${this.randomStr(length, digits)} cm`;
+
+      // number/number
+      case '[Blood_Pressure]':
+        return `${this.randomStr(length, digits)}/${this.randomStr(length, digits)} mmHg`;
+
+      // plat
+      case '[Plate]':
+        const regionLength = Math.random() < 0.5 ? 1 : 2;
+        const region = this.randomStr(regionLength, letters);
+
+        const numberLength = Math.max(1, Math.min(4, length - regionLength - 3));
+        const numbers = this.randomStr(numberLength, digits);
+
+        const suffixLength = length - regionLength - numberLength - 1;
+        const suffix = this.randomStr(Math.max(0, suffixLength), letters);
+
+        return `${region} ${numbers}${suffix ? ' ' + suffix : ''}`;
+
+      // default empty
       default:
         return '';
     }
@@ -1003,11 +1027,19 @@ export class MaskingFile implements OnInit {
   generateDiffTokens(): void {
     const targets = this.valueOnlyTable.map(item => item.ori);
 
-    const splitTokens = (text: string) =>
-      text.split(/(\s+)/).map(word => ({
+    const splitTokens = (text: string) => {
+    const regex = /Rp\d+(?:[.,]\d+)+|[\w.+-]+@[\w-]+\.[\w.-]+|\d+(?:[.,/]\d+)+|\+?\d[\d\-\/\s]+|\d+ cm|\d+ kg|\d+ mmHg|[A-Z][+-]|\w+|[.,!?;:"'()[\]{}]/g;
+    const matches = text.match(regex) || [];
+      return matches.map(word => ({
         word,
         changed: targets.includes(word.trim())
       }));
+    };
+  //  const splitTokens = (text: string) =>
+  //     text.split(/(\s+)/).map(word => ({
+  //       word,
+  //       changed: targets.includes(word.trim())
+  //     }));
 
     this.originalTokensWithDiff = splitTokens(this.originalContent);
     this.maskedTokensWithDiff = splitTokens(this.maskedContent);
