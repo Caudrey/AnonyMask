@@ -5,6 +5,7 @@ from explicit_model.model import predict_explicit_pii
 from implicit_model.model import predict_implicit_pii
 from mask_config import set_mask_words, set_excluded_words
 from fastapi.middleware.cors import CORSMiddleware
+from datetime import datetime
 
 app = FastAPI()
 
@@ -26,9 +27,17 @@ class PredictionRequest(BaseModel):
 
 @app.post("/predict")
 def predict(request: PredictionRequest):
+    startDate = datetime.now()
+
     resultsExplicit = predict_explicit_pii(request.text)
     resultsImplicit = predict_implicit_pii(request.text)
     print("Hai")
+
+    endDate = datetime.now()
+    elapsed = (endDate - startDate).total_seconds()
+    print(f"Start Date: {startDate}")
+    print(f"End Date: {endDate}")
+    print(f"Duration: {elapsed:.2f} seconds")
     return {"predictionsExplicit": resultsExplicit, "predictionsImplicit": resultsImplicit}
 
 @app.post("/mask")
