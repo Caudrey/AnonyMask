@@ -207,11 +207,40 @@
         </div>
       </div> -->
 
-      <div class="mask-selection">
+      <!-- <div class="mask-selection">
         <h3>🔐 Choose Masking Mode</h3>
         <button (click)="selectMaskType('partial'); resetAllPreviews()">🧩 Partial Mask</button>
+        <button *ngIf="fileReady"
+          [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
+          (click)="handlePartialClick('redact'); resetAllPreviews()"
+        >✂ Redact Mask</button>
+        <button *ngIf="fileReady"
+          [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
+          (click)="handlePartialClick('prefix-suffix'); resetAllPreviews()"
+        >🧩 Prefix & Suffix Mask</button>
         <button (click)="selectMaskType('full'); resetAllPreviews()">🛡️ Fully Mask</button>
       </div>
+ -->
+
+  <!-- Masking Mode Buttons -->
+  <div class="mask-selection" *ngIf="fileReady">
+    <h3>🔐 Choose Masking Mode</h3>
+
+    <button
+      [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
+      (click)="selectMaskType('partial'); handlePartialClick('redact'); resetAllPreviews()"
+    >✂ Redact Mask</button>
+
+    <button
+      [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
+      (click)="selectMaskType('partial'); handlePartialClick('prefix-suffix'); resetAllPreviews()"
+    >🧩 Partial Mask</button>
+
+    <button
+      [ngClass]="{ 'clicked': selectedMaskType === 'full' }"
+      (click)="selectMaskType('full'); resetAllPreviews()"
+    >🛡️ Fully Mask</button>
+  </div>
 
 
   <div class="mini-navbar" *ngIf="fileReady  && selectedMaskType === 'full'">
@@ -394,7 +423,7 @@
     </tbody>
   </table>
 
-  <div class="mini-navbar" *ngIf="fileReady && selectedMaskType === 'partial'">
+  <!-- <div class="mini-navbar" *ngIf="fileReady && selectedMaskType === 'partial'">
     <button
       [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
       (click)="handlePartialClick('redact')"
@@ -404,7 +433,8 @@
       [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
       (click)="handlePartialClick('prefix-suffix')"
     >🧩 Prefix & Suffix Mask</button>
-  </div>
+  </div> -->
+
   <!-- TABEL PREVIEW UNTUK PARTIAL MASKING -->
   <div
     *ngIf="selectedMaskType === 'partial' && clickedPartialButton && partialMaskedStats.length > 0"
