@@ -21,22 +21,22 @@ import { ApiService } from '../services/api';
 export class MaskingFile implements OnInit {
   fileReady = false;
   fileName: string = '';
-  // maskedContent = '';
-  // originalContent = '';
-  //   isGenerating = false;
+  maskedContent = '';
+  originalContent = '';
+  // isGenerating = false;
 
-  originalContent = 'My phone number is 123-456-7890 and my email is john@example.com';
-  maskedContent = 'My phone number is ***-***-**** and my email is ****@example.com';
+  // originalContent = 'My phone number is 123-456-7890 and my email is john@example.com';
+  // maskedContent = 'My phone number is ***-***-**** and my email is ****@example.com';
 
-  searchTermsUser: string[] = ['john@example.com', '123-456-7890', 'John', 'ShadowMask'];
-  replacementTermsUser: string[] = ['testing@test.com', '0987654321', 'Ash', 'Masked'];
+  searchTermsUser: string[] = [];
+  replacementTermsUser: string[] = [];
 
-  searchTermsCategory: string[] = ['john@example.com', '123-456-7890', 'John', 'ShadowMask'];
-  replacementTermsCategory: string[] = ['[EMAIL]', '[PHONE]', '[NAME]', '[NAME]'];
+  searchTermsCategory: string[] = [];
+  replacementTermsCategory: string[] = [];
 
-  searchTermsAllRandomized: string[] = ['john@example.com', '123-456-7890', 'John', 'ShadowMask'];
+  searchTermsAllRandomized: string[] = [];
 
-  searchTermsDataRandomized: string[] = ['john@example.com', '123-456-7890', 'John', 'ShadowMask'];
+  searchTermsDataRandomized: string[] = [];
   replacementTermsRandomized: string[] = [];
 
   replacementLog: { original: string; replaced: string }[] = [];
@@ -75,18 +75,18 @@ export class MaskingFile implements OnInit {
   }
 
   ngOnInit(): void {
-    this.originalContent = `Hi
-    my email
-     is john@example.com
-      and phone is 1234567890.
-      Makan`;
-    this.maskedContent = "[MASKED]";
-    this.replacementLog = [
-      { original: 'john@example.com', replaced: '[EMAIL]' },
-      { original: '1234567890', replaced: '[PHONE]' },
-    ];
-    this.generatePreviewTables();
-    this.generateDiffTokens();
+    // this.originalContent = `Hi
+    // my email
+    //  is john@example.com
+    //   and phone is 1234567890.
+    //   Makan`;
+    // this.maskedContent = "[MASKED]";
+    // this.replacementLog = [
+    //   { original: 'john@example.com', replaced: '[EMAIL]' },
+    //   { original: '1234567890', replaced: '[PHONE]' },
+    // ];
+    // this.generatePreviewTables();
+    // this.generateDiffTokens();
     // this.fileReady = true;
   }
 
@@ -156,17 +156,25 @@ export class MaskingFile implements OnInit {
 
             if (lastY !== null && Math.abs(y - lastY) > 5) {
               strings.push('\n'); // new line
+
+              // if empty line, add new line
+              if(Math.abs(y - lastY) > 25){
+                strings.push('\n');
+              }
             }
 
             strings.push(text);
             lastY = y;
           });
-          text += strings.join('');
+          text += strings.join('') + '\n';
         }
         this.originalContent = text;
         this.processOriginalContent();
       };
       reader.readAsArrayBuffer(file);
+
+      this.generatePreviewTables();
+      this.generateDiffTokens();
 
     // DOCX
     } else if ( fileType === supportedTypes[2]) {
@@ -178,27 +186,54 @@ export class MaskingFile implements OnInit {
 
       reader.readAsArrayBuffer(file);
 
+      this.generatePreviewTables();
+      this.generateDiffTokens();
+
     // XLSX / XLS / CSV
     } else if (
-    fileType === supportedTypes[3] ||
-    fileType === supportedTypes[4] || fileType === supportedTypes[5]
-  ) {
-    reader.onload = (e) => {
-      const data = new Uint8Array(reader.result as ArrayBuffer);
-      const workbook = XLSX.read(data, { type: 'array' });
+      fileType === supportedTypes[3] ||
+      fileType === supportedTypes[4] || fileType === supportedTypes[5]
+    ) {
+      reader.onload = (e) => {
+        const data = new Uint8Array(reader.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
 
-      let result = '';
-      workbook.SheetNames.forEach(sheetName => {
-        const worksheet = workbook.Sheets[sheetName];
-        const sheetData = XLSX.utils.sheet_to_csv(worksheet); // or .sheet_to_txt
-        const viewDataExcel = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
-        result += `Sheet: ${sheetName}\n${sheetData}\n\n`;
-      });
+        let result = '';
+        workbook.SheetNames.forEach(sheetName => {
+          const worksheet = workbook.Sheets[sheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]; // array of arrays
 
-      this.originalContent = result;
-      this.processOriginalContent();
-    };
-    reader.readAsArrayBuffer(file);
+          result += `Sheet: ${sheetName}\n`;
+
+          if (jsonData.length > 0) {
+            const headers = jsonData[0];
+            const rows = jsonData.slice(1);
+
+            headers.forEach((header: string, index: number) => {
+              const values = rows.map(row => row[index]).filter(v => v !== undefined && v !== null);
+              result += `${header}: ${values.join(' | ')}.\n`;
+            });
+          }
+
+          result += '\n';
+        });
+
+        // let result = '';
+        // workbook.SheetNames.forEach(sheetName => {
+        //   const worksheet = workbook.Sheets[sheetName];
+        //   const sheetData = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
+        //   const viewDataExcel = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
+        //   result += `Sheet: ${sheetName}\n${sheetData}\n\n`;
+        // });
+
+        this.originalContent = result;
+        this.processOriginalContent();
+      };
+      reader.readAsArrayBuffer(file);
+
+      this.generatePreviewTables();
+      this.generateDiffTokens();
+
   } else {
       alert('Unsupported file type. Please upload .txt, .pdf, or .docx');
     }
@@ -217,6 +252,7 @@ export class MaskingFile implements OnInit {
 
             // The replacementLog is now set by the API response, so we can generate tables
             this.generatePreviewTables();
+            this.generateDiffTokens();
             this.fileReady = true;
             console.log("Log generated from APIS:", this.replacementLog)
           },
@@ -307,6 +343,7 @@ export class MaskingFile implements OnInit {
         // Add to randomized lists so they are included in those functions
         this.searchTermsAllRandomized.push(originalTerm);
         this.searchTermsDataRandomized.push(originalTerm);
+        this.replacementTermsRandomized.push(categoryTerm);
 
         console.log(`Added "${originalTerm}" to search lists.`);
       }

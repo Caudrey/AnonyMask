@@ -128,12 +128,17 @@ export class UnmaskingFile {
 
             if (lastY !== null && Math.abs(y - lastY) > 5) {
               strings.push('\n'); // new line
+
+              // if empty line, add new line
+              if(Math.abs(y - lastY) > 25){
+                strings.push('\n');
+              }
             }
 
             strings.push(text);
             lastY = y;
           });
-          text += strings.join('');
+          text += strings.join('') + '\n';
         }
         content = text;
         this.processContent(fileName, type, content);
@@ -162,10 +167,30 @@ export class UnmaskingFile {
         let result = '';
         workbook.SheetNames.forEach(sheetName => {
           const worksheet = workbook.Sheets[sheetName];
-          const sheetData = XLSX.utils.sheet_to_csv(worksheet); // or .sheet_to_txt
-          const viewDataExcel = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
-          result += `Sheet: ${sheetName}\n${sheetData}\n\n`;
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][]; // array of arrays
+
+          result += `Sheet: ${sheetName}\n`;
+
+          if (jsonData.length > 0) {
+            const headers = jsonData[0];
+            const rows = jsonData.slice(1);
+
+            headers.forEach((header: string, index: number) => {
+              const values = rows.map(row => row[index]).filter(v => v !== undefined && v !== null);
+              result += `${header}: ${values.join(' | ')}.\n`;
+            });
+          }
+
+          result += '\n';
         });
+
+        // let result = '';
+        // workbook.SheetNames.forEach(sheetName => {
+        //   const worksheet = workbook.Sheets[sheetName];
+        //   const sheetData = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
+        //   const viewDataExcel = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
+        //   result += `Sheet: ${sheetName}\n${sheetData}\n\n`;
+        // });
 
         content = result;
         this.processContent(fileName, type, content);
