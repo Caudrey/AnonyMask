@@ -343,7 +343,6 @@ export class MaskingFile implements OnInit {
         // Add to randomized lists so they are included in those functions
         this.searchTermsAllRandomized.push(originalTerm);
         this.searchTermsDataRandomized.push(originalTerm);
-        this.replacementTermsRandomized.push(categoryTerm);
 
         console.log(`Added "${originalTerm}" to search lists.`);
       }
