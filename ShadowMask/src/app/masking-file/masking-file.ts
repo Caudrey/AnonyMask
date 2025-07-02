@@ -218,6 +218,7 @@ export class MaskingFile implements OnInit {
             // The replacementLog is now set by the API response, so we can generate tables
             this.generatePreviewTables();
             this.fileReady = true;
+            console.log("Log generated from APIS:", this.replacementLog)
           },
           error: (err) => {
             console.error("API Error:", err);
@@ -255,7 +256,6 @@ export class MaskingFile implements OnInit {
           return content; // Return original content if there are no predictions
         }
 
-        console.log(predictionsImplicit)
         // 4. Loop through the predictions and replace them in the content
         // This logic uses the start/end offsets from the API for precise replacement
         const sortedPredictions = predictionsExplicit.sort((a: any, b: any) => a.start - b.start);
@@ -583,7 +583,7 @@ export class MaskingFile implements OnInit {
   ): string {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     const digits = '0123456789';
-    
+
     switch (typeOrFormat) {
       // email
       case '[Mail]':
@@ -698,7 +698,6 @@ export class MaskingFile implements OnInit {
     this.randomizedPreview = [];
     this.activePreviewType = 'all';
 
-
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const term = this.searchTermsCategory[i];
       const type = this.replacementTermsCategory[i] || '[TEXT]';
@@ -725,12 +724,11 @@ export class MaskingFile implements OnInit {
 
 
   sameDataRandomized(): void {
-  this.replacementTermsRandomized = [];
-  this.replacementLog = [];
-  this.randomizedPreview = [];
-  this.activePreviewType = 'same';
-  this.allRandomizedPreview = [];
-
+    this.replacementTermsRandomized = [];
+    this.replacementLog = [];
+    this.randomizedPreview = [];
+    this.activePreviewType = 'same';
+    this.allRandomizedPreview = [];
 
     for (let i = 0; i < this.replacementTermsCategory.length; i++) {
       const original = this.searchTermsDataRandomized[i];
@@ -924,8 +922,6 @@ export class MaskingFile implements OnInit {
     }));
   }
 
-
-
   onWordClick(word: string): void {
     const alreadyExists = this.searchTermsUser.includes(word);
     if (!alreadyExists) {
@@ -935,10 +931,23 @@ export class MaskingFile implements OnInit {
       // Tambah ke log buat preview table
       this.replacementLog.push({ original: word, replaced: '[USER_ADDED]' });
 
+      this.searchTermsCategory.push(word);
+      this.replacementTermsCategory.push('[USER_ADDED]');
+
+      // Add to randomized lists so they are included in those functions
+      this.searchTermsAllRandomized.push(word);
+      this.searchTermsDataRandomized.push(word);
+
       this.generatePreviewTables();
       this.generateDiffTokens();
 
       this.userMasking();
+
+      // --- FIX: Refresh partial mask stats if a partial view is active ---
+      if (this.clickedPartialButton) {
+          this.handlePartialClick(this.clickedPartialButton as 'redact' | 'prefix-suffix');
+      }
+
       }
     }
 
@@ -948,6 +957,13 @@ export class MaskingFile implements OnInit {
     if (idx !== -1) {
       this.searchTermsUser.splice(idx, 1);
       this.replacementTermsUser.splice(idx, 1);
+
+      this.searchTermsCategory.splice(idx, 1);
+      this.replacementTermsCategory.splice(idx, 1);
+
+      // Add to randomized lists so they are included in those functions
+      this.searchTermsAllRandomized.splice(idx, 1);
+      this.searchTermsDataRandomized.splice(idx, 1);
     }
 
     // Hapus dari replacementLog
@@ -967,16 +983,16 @@ export class MaskingFile implements OnInit {
   }
 
   resetAllPreviews() {
-  this.activePreviewType = null;
-  // this.clickedButton = null;
-  this.clickedPartialButton = null;
-  this.replacementLog = [];
-  this.valueCategoryTable = [];
-  this.categoryOnlyTable = [];
-  this.valueOnlyTable = [];
-  this.allRandomizedPreview = [];
-  this.randomizedPreview = [];
-  this.partialMaskedStats = [];
+    this.activePreviewType = null;
+    // this.clickedButton = null;
+    this.clickedPartialButton = null;
+    // this.replacementLog = [];
+    this.valueCategoryTable = [];
+    this.categoryOnlyTable = [];
+    this.valueOnlyTable = [];
+    this.allRandomizedPreview = [];
+    this.randomizedPreview = [];
+    this.partialMaskedStats = [];
 }
 
   selectMaskType(type: 'partial' | 'full') {
@@ -986,68 +1002,154 @@ export class MaskingFile implements OnInit {
   handlePartialClick(type: 'redact' | 'prefix-suffix') {
     this.clickedPartialButton = type;
 
+    // Create a definitive list of PII to mask, combining AI log and user additions.
+    const allPiiToMask = [...this.replacementLog];
+    this.replacementLog.forEach(log => {
+      if (log.replaced === '[USER_ADDED]' && !allPiiToMask.some(p => p.original === log.original)) {
+        allPiiToMask.push(log);
+      }
+    });
+
     this.replacementLog = [];
     this.activePreviewType = null;
     this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
 
-    const originalWords = this.originalContent.trim().split(/\s+/);
-    const maskedWords = this.maskedContent.trim().split(/\s+/);
-    const stats: Record<string, { count: number; format?: string }> = {};
+    const piiToNewMaskMap = new Map<string, string>();
+    const usedMasks = new Map<string, string>(); // Key: mask, Value: original word
 
-    for (let i = 0; i < Math.min(originalWords.length, maskedWords.length); i++) {
-      if (originalWords[i] !== maskedWords[i]) {
-        const word = maskedWords[i];
-
-        if (!stats[word]) {
-          stats[word] = { count: 0 };
+    allPiiToMask.forEach(logEntry => {
+        const originalPii = logEntry.original;
+        if (piiToNewMaskMap.has(originalPii)) {
+            return;
         }
 
-        stats[word].count += 1;
+        let finalMask = '';
 
         if (type === 'prefix-suffix') {
-          const prefix = word.slice(0, 2);
-          const suffix = word.slice(-2);
-          stats[word].format = `${prefix}...${suffix}`;
+            // Helper function to generate the initial mask (e.g., "nasi" -> "n**i")
+            const generateInitialMask = (word: string): string => {
+                if (word.length <= 2) {
+                    return word.slice(0, 1) + '*'.repeat(word.length - 1);
+                }
+                const firstChar = word.slice(0, 1);
+                const lastChar = word.slice(-1);
+                const middleStars = '*'.repeat(word.length - 2);
+                return `${firstChar}${middleStars}${lastChar}`;
+            };
+
+            let potentialMask = generateInitialMask(originalPii);
+            let revealIndex = originalPii.length - 2; // Start revealing from the character before the last one
+
+            // Check for collisions and resolve them by revealing more characters from right-to-left
+            while (usedMasks.has(potentialMask) && usedMasks.get(potentialMask) !== originalPii) {
+                // Failsafe: if we run out of characters to reveal, append a unique symbol
+                if (revealIndex < 1) {
+                    potentialMask += `~`;
+                    break;
+                }
+
+                // Reveal one more character from right-to-left to create a new mask
+                const maskArray = potentialMask.split('');
+                maskArray[revealIndex] = originalPii[revealIndex];
+                potentialMask = maskArray.join('');
+
+                revealIndex--; // Move to the next character to the left for the next potential collision
+            }
+
+            finalMask = potentialMask;
+            usedMasks.set(finalMask, originalPii); // Store the final, unique mask
+
+        } else { // type === 'redact'
+            finalMask = '*'.repeat(originalPii.length);
         }
-      }
-    }
+
+        piiToNewMaskMap.set(originalPii, finalMask);
+    });
+
+    let finalMaskedContent = this.originalContent;
+    const stats: Record<string, { count: number; format?: string }> = {};
+
+    piiToNewMaskMap.forEach((newMask, originalPii) => {
+        const searchRegex = new RegExp(this.escapeRegExp(originalPii), 'g');
+        finalMaskedContent = finalMaskedContent.replace(searchRegex, (match) => {
+            this.replacementLog.push({ original: match, replaced: newMask });
+            if (!stats[newMask]) {
+                stats[newMask] = { count: 0, format: type === 'prefix-suffix' ? newMask : undefined };
+            }
+            stats[newMask].count += 1;
+            return newMask;
+        });
+    });
+
+    this.maskedContent = finalMaskedContent;
 
     this.partialMaskedStats = Object.entries(stats).map(([word, info]) => ({
-      word,
-      count: info.count,
-      format: info.format,
+        word,
+        count: info.count,
+        format: info.format,
     }));
+
+    // Regenerate other UI components that depend on the masked content or logs.
+    this.generatePreviewTables();
+    this.generateDiffTokens();
+
+    // const originalWords = this.originalContent.trim().split(/\s+/);
+    // const maskedWords = this.maskedContent.trim().split(/\s+/);
+    // const stats: Record<string, { count: number; format?: string }> = {};
+
+    // for (let i = 0; i < Math.min(originalWords.length, maskedWords.length); i++) {
+    //   if (originalWords[i] !== maskedWords[i]) {
+    //     const word = maskedWords[i];
+
+    //     if (!stats[word]) {
+    //       stats[word] = { count: 0 };
+    //     }
+
+    //     stats[word].count += 1;
+
+    //     if (type === 'prefix-suffix') {
+    //       const prefix = word.slice(0, 2);
+    //       const suffix = word.slice(-2);
+    //       stats[word].format = `${prefix}...${suffix}`;
+    //     }
+    //   }
+    // }
+
+    // this.partialMaskedStats = Object.entries(stats).map(([word, info]) => ({
+    //   word,
+    //   count: info.count,
+    //   format: info.format,
+    // }));
   }
 
   onMaskedValueChange(original: string, newMasked: string): void {
-  // Update maskedContent berdasarkan replacementLog terbaru
-  const updatedLog = this.replacementLog.map(log =>
-    log.original === original
-      ? { ...log, replaced: newMasked }
-      : log
-  );
+    // Update maskedContent berdasarkan replacementLog terbaru
+    const updatedLog = this.replacementLog.map(log =>
+      log.original === original
+        ? { ...log, replaced: newMasked }
+        : log
+    );
 
-  this.replacementLog = updatedLog;
+    this.replacementLog = updatedLog;
 
-  // Regenerate masked content
-  this.maskedContent = this.replaceFromArray(
-    this.originalContent,
-    this.replacementLog.map(r => r.original),
-    this.replacementLog.map(r => r.replaced)
-  );
+    // Regenerate masked content
+    this.maskedContent = this.replaceFromArray(
+      this.originalContent,
+      this.replacementLog.map(r => r.original),
+      this.replacementLog.map(r => r.replaced)
+    );
 
-  this.generatePreviewTables();
-  this.generateDiffTokens();
+    this.generatePreviewTables();
+    this.generateDiffTokens();
   }
 
   generateDiffTokens(): void {
     const targets = this.valueOnlyTable.map(item => item.ori);
 
     const splitTokens = (text: string) => {
-    const regex = /Rp\d+(?:[.,]\d+)+|[\w.+-]+@[\w-]+\.[\w.-]+|\d+(?:[.,/]\d+)+|\+?\d[\d\-\/\s]+|\d+ cm|\d+ kg|\d+ mmHg|[A-Z][+-]|\w+|[.,!?;:"'()[\]{}]/g;
-    const matches = text.match(regex) || [];
+    const regex = /Rp\d+(?:[.,]\d+)+|[\w.+-]+@[\w-]+\.[\w.-]+|\[\w+\]|\d+(?:[.,/]\d+)+|\+?\d[\d\-\/\s]+|\d+ cm|\d+ kg|\d+ mmHg|[A-Z][+-]|[\w*]+|[.,!?;:"'()[\]{}]/g;    const matches = text.match(regex) || [];
       return matches.map(word => ({
         word,
         changed: targets.includes(word.trim())
