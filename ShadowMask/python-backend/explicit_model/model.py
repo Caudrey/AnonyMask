@@ -2,11 +2,13 @@ import torch
 from transformers import AutoTokenizer, AutoModelForTokenClassification
 
 MODEL_PATH = "./explicit_model"
+MAX_LENGTH = 128 # The maximum sequence length for the model
+OVERLAP = 30 # The number of tokens to overlap between chunks
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
 model = AutoModelForTokenClassification.from_pretrained(MODEL_PATH)
 model.eval()
-
+print("Hi")
 index_to_label = {
     0: 'B_Account', 1: 'B_Address', 2: 'B_Asset', 3: 'B_Balance',
     4: 'B_Blood_Pressure', 5: 'B_Blood_Type', 6: 'B_Body_Height', 7: 'B_Body_Weight',
@@ -30,45 +32,418 @@ index_to_label = {
 def preprocess_input(text: str) -> str:
     return text.strip()
 
+# def predict_explicit_pii(text: str):
+#     # Tokenize the input text
+#     tokens = tokenizer(text, return_offsets_mapping=True, truncation=False)
+#     input_ids = tokens['input_ids']
+#     offset_mapping = tokens['offset_mapping']
+#     total_length = len(input_ids)
+
+#     # List to store all individual token predictions from all chunks
+#     all_token_predictions = []
+
+#     # Process the text in chunks
+#     for i in range(0, total_length, MAX_LENGTH - OVERLAP):
+#         chunk_start_token_idx = i
+#         chunk_end_token_idx = min(i + MAX_LENGTH, total_length)
+#         chunk_input_ids = input_ids[chunk_start_token_idx:chunk_end_token_idx]
+#         chunk_offsets = offset_mapping[chunk_start_token_idx:chunk_end_token_idx]
+#         input_tensor = torch.tensor([chunk_input_ids])
+
+#         with torch.no_grad():
+#             outputs = model(input_tensor)
+#             predictions = torch.argmax(outputs.logits, dim=2)
+
+#         predicted_labels = [index_to_label[p.item()] for p in predictions[0]]
+
+#         for label, offset in zip(predicted_labels, chunk_offsets):
+#             if offset[0] == offset[1]: continue
+#             all_token_predictions.append({"label": label, "start": offset[0], "end": offset[1]})
+
+#     # De-duplicate predictions based on start offset
+#     unique_predictions_by_start = {pred['start']: pred for pred in all_token_predictions}
+#     sorted_predictions = sorted(unique_predictions_by_start.values(), key=lambda x: x['start'])
+
+#     # <-- FIX: Start of final, robust entity reconstruction logic
+#     final_entities = []
+#     if not sorted_predictions:
+#         return []
+
+#     current_entity = []
+#     for pred in sorted_predictions:
+#         label = pred['label']
+
+#         if not current_entity:
+#             if label != 'O':
+#                 current_entity.append(pred)
+#             continue
+
+#         last_token = current_entity[-1]
+
+#         # Condition 1: Is the new token physically connected to the last one?
+#         is_contiguous = pred['start'] == last_token['end']
+
+#         # Condition 2: Is the new token an 'I' tag of the same type?
+#         is_matching_inside_tag = (label.startswith('I_') and
+#                                   last_token['label'] != 'O' and
+#                                   label[2:] == last_token['label'][2:])
+
+#         if is_contiguous or is_matching_inside_tag:
+#             current_entity.append(pred)
+#         else:
+#             # The entity has ended, finalize it
+#             start_offset = current_entity[0]['start']
+#             end_offset = current_entity[-1]['end']
+#             # Use the label of the first token for the whole entity
+#             entity_label = current_entity[0]['label']
+#             if not entity_label.startswith('B_'):
+#                  entity_label = 'B_' + entity_label[2:]
+
+#             final_entities.append({
+#                 "word": text[start_offset:end_offset],
+#                 "label": entity_label
+#             })
+
+#             # Start a new entity if the current token is not 'O'
+#             if label != 'O':
+#                 current_entity = [pred]
+#             else:
+#                 current_entity = []
+
+#     # Add the last entity if it exists after the loop
+#     if current_entity:
+#         start_offset = current_entity[0]['start']
+#         end_offset = current_entity[-1]['end']
+#         entity_label = current_entity[0]['label']
+#         if not entity_label.startswith('B_'):
+#             entity_label = 'B_' + entity_label[2:]
+#         final_entities.append({
+#             "word": text[start_offset:end_offset],
+#             "label": entity_label
+#         })
+#     # <-- FIX: End of new logic
+
+#     return final_entities
+
+# def predict_explicit_pii(text: str):
+#     # Tokenize the input text
+#     tokens = tokenizer(text, return_offsets_mapping=True, truncation=False)
+#     input_ids = tokens['input_ids']
+#     offset_mapping = tokens['offset_mapping']
+#     total_length = len(input_ids)
+
+#     # List to store all individual token predictions from all chunks
+#     all_token_predictions = []
+
+#     # Process the text in chunks
+#     for i in range(0, total_length, MAX_LENGTH - OVERLAP):
+#         chunk_start_token_idx = i
+#         chunk_end_token_idx = min(i + MAX_LENGTH, total_length)
+#         chunk_input_ids = input_ids[chunk_start_token_idx:chunk_end_token_idx]
+#         chunk_offsets = offset_mapping[chunk_start_token_idx:chunk_end_token_idx]
+#         input_tensor = torch.tensor([chunk_input_ids])
+
+#         with torch.no_grad():
+#             outputs = model(input_tensor)
+#             predictions = torch.argmax(outputs.logits, dim=2)
+
+#         predicted_labels = [index_to_label[p.item()] for p in predictions[0]]
+
+#         for label, offset in zip(predicted_labels, chunk_offsets):
+#             if offset[0] == offset[1]: continue
+#             all_token_predictions.append({"label": label, "start": offset[0], "end": offset[1]})
+
+#     # De-duplicate predictions based on start offset
+#     unique_predictions_by_start = {pred['start']: pred for pred in all_token_predictions}
+#     sorted_predictions = sorted(unique_predictions_by_start.values(), key=lambda x: x['start'])
+
+#     # This logic correctly groups B- (Begin) and I- (Inside) tags into complete entities.
+#     final_entities = []
+#     if not sorted_predictions:
+#         return []
+
+#     current_entity = []
+#     for pred in sorted_predictions:
+#         label = pred['label']
+
+#         if not current_entity:
+#             if label != 'O':
+#                 current_entity.append(pred)
+#             continue
+
+#         last_token = current_entity[-1]
+
+#         # Condition 1: Is the new token physically connected to the last one?
+#         is_contiguous = pred['start'] == last_token['end']
+
+#         # Condition 2: Is the new token an 'I' tag of the same type?
+#         is_matching_inside_tag = (label.startswith('I_') and
+#                                   last_token['label'] != 'O' and
+#                                   label[2:] == last_token['label'][2:])
+
+#         if is_contiguous or is_matching_inside_tag:
+#             current_entity.append(pred)
+#         else:
+#             # The entity has ended, finalize it
+#             start_offset = current_entity[0]['start']
+#             end_offset = current_entity[-1]['end']
+#             entity_label = current_entity[0]['label']
+#             if not entity_label.startswith('B_'):
+#                  entity_label = 'B_' + entity_label[2:]
+
+#             final_entities.append({
+#                 "word": text[start_offset:end_offset],
+#                 "label": entity_label,
+#                 "start": start_offset,
+#                 "end": end_offset
+#             })
+
+#             # Start a new entity if the current token is not 'O'
+#             if label != 'O':
+#                 current_entity = [pred]
+#             else:
+#                 current_entity = []
+
+#     # Add the last entity if it exists after the loop
+#     if current_entity:
+#         start_offset = current_entity[0]['start']
+#         end_offset = current_entity[-1]['end']
+#         entity_label = current_entity[0]['label']
+#         if not entity_label.startswith('B_'):
+#             entity_label = 'B_' + entity_label[2:]
+#         final_entities.append({
+#             "word": text[start_offset:end_offset],
+#             "label": entity_label,
+#             "start": start_offset,
+#             "end": end_offset
+#         })
+
+#     return final_entities
+
+# def predict_explicit_pii(text: str):
+#     # Tokenize the input text
+#     tokens = tokenizer(text, return_offsets_mapping=True, truncation=False)
+#     input_ids = tokens['input_ids']
+#     offset_mapping = tokens['offset_mapping']
+#     total_length = len(input_ids)
+
+#     # List to store all individual token predictions from all chunks
+#     all_token_predictions = []
+
+#     # Process the text in chunks
+#     for i in range(0, total_length, MAX_LENGTH - OVERLAP):
+#         chunk_start_token_idx = i
+#         chunk_end_token_idx = min(i + MAX_LENGTH, total_length)
+#         chunk_input_ids = input_ids[chunk_start_token_idx:chunk_end_token_idx]
+#         chunk_offsets = offset_mapping[chunk_start_token_idx:chunk_end_token_idx]
+#         input_tensor = torch.tensor([chunk_input_ids])
+
+#         with torch.no_grad():
+#             outputs = model(input_tensor)
+#             predictions = torch.argmax(outputs.logits, dim=2)
+
+#         predicted_labels = [index_to_label[p.item()] for p in predictions[0]]
+
+#         for label, offset in zip(predicted_labels, chunk_offsets):
+#             if offset[0] == offset[1]: continue
+#             all_token_predictions.append({"label": label, "start": offset[0], "end": offset[1]})
+
+#     # De-duplicate predictions based on start offset
+#     unique_predictions_by_start = {pred['start']: pred for pred in all_token_predictions}
+#     sorted_predictions = sorted(unique_predictions_by_start.values(), key=lambda x: x['start'])
+
+#     final_entities = []
+#     if not sorted_predictions:
+#         return []
+
+#     current_entity_tokens = []
+#     for pred in sorted_predictions:
+#         current_label = pred['label']
+
+#         if not current_entity_tokens:
+#             if current_label != 'O':
+#                 current_entity_tokens.append(pred)
+#             continue
+
+#         last_token = current_entity_tokens[-1]
+
+#         # --- ENHANCED LOGIC ---
+#         # The entity type is determined by its FIRST token. This avoids breaking the merge chain.
+#         is_building_pii_entity = current_entity_tokens[0]['label'] != 'O'
+
+#         # Rule 1: Are the tokens physically part of the same word (contiguous)?
+#         is_contiguous = (last_token['end'] == pred['start'])
+
+#         # Rule 2: Standard B-I pairing of the same type.
+#         last_label = last_token['label']
+#         last_label_type = last_label[2:] if last_label != 'O' else 'O'
+#         current_label_type = current_label[2:] if current_label != 'O' else 'O'
+#         is_matching_inside_tag = (current_label.startswith('I_') and last_label != 'O' and current_label_type == last_label_type)
+
+#         # Rule 3: Two B-tags of the same type separated by a small gap of whitespace/punctuation.
+#         is_sequential_begin_tag = False
+#         if not is_contiguous:
+#             if current_label.startswith('B_') and last_label != 'O' and current_label_type == last_label_type:
+#                 gap_text = text[last_token['end']:pred['start']]
+#                 if len(gap_text) <= 5 and all(c in ' :-,.' for c in gap_text):
+#                     is_sequential_begin_tag = True
+
+#         # --- DECISION HIERARCHY ---
+#         if is_contiguous and is_building_pii_entity:
+#             # Priority 1: If building a PII entity and tokens are contiguous, always merge.
+#             current_entity_tokens.append(pred)
+#         elif is_matching_inside_tag:
+#             # Priority 2: Standard B-I tagging.
+#             current_entity_tokens.append(pred)
+#         elif is_sequential_begin_tag:
+#             # Priority 3: Merge across small gaps.
+#             current_entity_tokens.append(pred)
+#         else:
+#             # The entity has ended. Finalize the current one and start a new one.
+#             start_offset = current_entity_tokens[0]['start']
+#             end_offset = current_entity_tokens[-1]['end']
+#             entity_label_raw = current_entity_tokens[0]['label']
+#             entity_label_type = entity_label_raw[2:]
+
+#             final_entities.append({
+#                 "word": text[start_offset:end_offset],
+#                 "label": f"B_{entity_label_type}",
+#                 "start": start_offset,
+#                 "end": end_offset
+#             })
+
+#             if current_label != 'O':
+#                 current_entity_tokens = [pred]
+#             else:
+#                 current_entity_tokens = []
+
+#     if current_entity_tokens:
+#         start_offset = current_entity_tokens[0]['start']
+#         end_offset = current_entity_tokens[-1]['end']
+#         entity_label_raw = current_entity_tokens[0]['label']
+#         entity_label_type = entity_label_raw[2:]
+
+#         final_entities.append({
+#             "word": text[start_offset:end_offset],
+#             "label": f"B_{entity_label_type}",
+#             "start": start_offset,
+#             "end": end_offset
+#         })
+
+#     return final_entities
 def predict_explicit_pii(text: str):
-    encoded = tokenizer(text, return_offsets_mapping=True, return_tensors="pt", truncation=True)
-    input_ids = encoded["input_ids"]
-    attention_mask = encoded["attention_mask"]
-    offsets = encoded["offset_mapping"][0]
+    """
+    Enhanced Debug Version to pinpoint the final merging issue.
+    """
+    print("\n--- STARTING PREDICTION ---")
 
-    with torch.no_grad():
-        outputs = model(input_ids=input_ids, attention_mask=attention_mask)
-        predictions = torch.argmax(outputs.logits, dim=-1).squeeze()
+    # Tokenize the input text
+    tokens = tokenizer(text, return_offsets_mapping=True, truncation=False)
+    input_ids = tokens['input_ids']
+    offset_mapping = tokens['offset_mapping']
+    total_length = len(input_ids)
 
-    tokens = tokenizer.convert_ids_to_tokens(input_ids.squeeze())
-    predicted_labels = [index_to_label[p.item()] for p in predictions]
+    all_token_predictions = []
 
-    word_level_output = []
-    current_word = ""
-    current_label = ""
-    last_label = "O"
-    last_end = 0
+    # Process in chunks
+    for i in range(0, total_length, MAX_LENGTH - OVERLAP):
+        chunk_start_token_idx = i
+        chunk_end_token_idx = min(i + MAX_LENGTH, total_length)
+        chunk_input_ids = input_ids[chunk_start_token_idx:chunk_end_token_idx]
+        chunk_offsets = offset_mapping[chunk_start_token_idx:chunk_end_token_idx]
+        input_tensor = torch.tensor([chunk_input_ids])
 
-    for token, label, (start, end) in zip(tokens, predicted_labels, offsets):
-        if start == end:  # Skip special tokens like [CLS], [SEP]
+        with torch.no_grad():
+            outputs = model(input_tensor)
+            predictions = torch.argmax(outputs.logits, dim=2)
+
+        predicted_labels = [index_to_label[p.item()] for p in predictions[0]]
+
+        for label, offset in zip(predicted_labels, chunk_offsets):
+            if offset[0] == offset[1]: continue
+            all_token_predictions.append({"label": label, "start": offset[0], "end": offset[1], "word": text[offset[0]:offset[1]]})
+
+    unique_predictions_by_start = {pred['start']: pred for pred in all_token_predictions}
+    sorted_predictions = sorted(unique_predictions_by_start.values(), key=lambda x: x['start'])
+
+    print("\n--- All Predicted Tokens (Most Important Log) ---")
+    for p in sorted_predictions:
+        print(p)
+    print("--------------------------------------------------\n")
+
+    final_entities = []
+    i = 0
+    while i < len(sorted_predictions):
+        pred = sorted_predictions[i]
+        if pred['label'] == 'O':
+            i += 1
             continue
 
-        piece = text[start:end]
+        anchor_pred = pred
+        lookbehind_parts = []
+        last_merged_start = anchor_pred['start']
+        temp_idx = i - 1
+        while temp_idx >= 0:
+            prev_pred = sorted_predictions[temp_idx]
+            if prev_pred['end'] == last_merged_start and prev_pred['label'] == 'O':
+                lookbehind_parts.insert(0, prev_pred)
+                last_merged_start = prev_pred['start']
+                temp_idx -= 1
+            else:
+                break
 
-        if token.startswith("##"):
-            current_word += piece  # Continue the subword
-        else:
-            if current_word:  # Save previous word
-                word_level_output.append({"word": current_word, "label": current_label})
-            current_word = piece
-            current_label = label
-            last_label = label
-        last_end = end
+        current_entity_tokens = lookbehind_parts + [anchor_pred]
 
-    if current_word:
-        word_level_output.append({"word": current_word, "label": current_label})
+        k = i + 1
+        while k < len(sorted_predictions):
+            next_pred = sorted_predictions[k]
+            last_token = current_entity_tokens[-1]
 
-    # Filter out non-PII (label == "O")
-    word_level_output = [entry for entry in word_level_output if entry["label"] != "O"]
+            # --- Merge Analysis ---
+            should_merge = False
 
-    return word_level_output
+            # Rule 1: Contiguous
+            if last_token['end'] == next_pred['start']:
+                should_merge = True
+
+            # Rule 2: Small Gap
+            else:
+                gap_text = text[last_token['end']:next_pred['start']]
+                gap_len = len(gap_text)
+                is_small_gap = 1 <= gap_len <= 5 and all(c in ' :-,.' for c in gap_text)
+
+                if is_small_gap and next_pred['label'] != 'O':
+                    should_merge = True
+                else:
+                    # --- DETAILED LOG FOR FAILED MERGE ---
+                    print("\n--- MERGE FAILED ---")
+                    print(f"Current Entity: [{' '.join(tok['word'] for tok in current_entity_tokens)}]")
+                    print(f"Could not merge next token: {next_pred}")
+                    print(f"--- Gap Analysis ---")
+                    print(f"Gap Text: '{gap_text}'")
+                    print(f"Gap Length: {gap_len} (Rule requires 1-5)")
+                    print(f"Is Small Gap & Junk Chars?: {is_small_gap}")
+                    print(f"Is Next Token PII?: {next_pred['label'] != 'O'}")
+                    print("----------------------\n")
+                    # --- END DEBUG LOG ---
+
+            if should_merge:
+                current_entity_tokens.append(next_pred)
+                k += 1
+            else:
+                break
+
+        start_offset = current_entity_tokens[0]['start']
+        end_offset = current_entity_tokens[-1]['end']
+        final_entities.append({
+            "word": text[start_offset:end_offset],
+            "label": f"B_{anchor_pred['label'][2:]}",
+            "start": start_offset,
+            "end": end_offset
+        })
+        i = k
+
+    print("\n--- FINAL DETECTED ENTITIES ---")
+    print(final_entities)
+    print("-----------------------------\n")
+    return final_entities

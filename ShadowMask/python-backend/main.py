@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from masker import mask_text
 from explicit_model.model import predict_explicit_pii
+from implicit_model.model import predict_implicit_pii
 from mask_config import set_mask_words, set_excluded_words
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -25,8 +26,10 @@ class PredictionRequest(BaseModel):
 
 @app.post("/predict")
 def predict(request: PredictionRequest):
-    results = predict_explicit_pii(request.text)
-    return {"predictions": results}
+    resultsExplicit = predict_explicit_pii(request.text)
+    resultsImplicit = predict_implicit_pii(request.text)
+    print("Hai")
+    return {"predictionsExplicit": resultsExplicit, "predictionsImplicit": resultsImplicit}
 
 @app.post("/mask")
 def run_masking(request: PredictionRequest):

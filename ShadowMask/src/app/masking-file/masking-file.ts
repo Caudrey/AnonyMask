@@ -127,6 +127,7 @@ export class MaskingFile implements OnInit {
 
     // TXT
     if (fileType === supportedTypes[0]) {
+
       reader.onload = () => {
         this.originalContent = reader.result as string;
         this.processOriginalContent();
@@ -205,6 +206,7 @@ export class MaskingFile implements OnInit {
 
 
   processOriginalContent(): void {
+    console.log("Test")
     this.maskPrivacy(this.originalContent).subscribe({
           next: (resultString) => {
             // This code runs ONLY after the API call is successful
@@ -243,29 +245,45 @@ export class MaskingFile implements OnInit {
       // 2. Use the 'map' operator to transform the API response into the final masked string
       map(response => {
         let maskedContent = content;
-        const predictions = response.predictions;
+        const predictionsExplicit = response.predictionsExplicit;
+        const predictionsImplicit  = response.predictionsImplicit;
 
         // 3. Clear the log and create a new one based on the API's findings
         this.replacementLog = [];
 
-        if (!predictions) {
+        if (!predictionsExplicit) {
           return content; // Return original content if there are no predictions
         }
 
-        console.log(predictions)
+        console.log(predictionsImplicit)
         // 4. Loop through the predictions and replace them in the content
-        predictions.forEach((p: { word: string, label: string }) => {
-          const replacement = `[${p.label.replace('B_', '').replace('I_', '')}]`;
-          // Use a regular expression to replace all occurrences of the word
-          const searchRegex = new RegExp(this.escapeRegExp(p.word), 'g');
+        // This logic uses the start/end offsets from the API for precise replacement
+        const sortedPredictions = predictionsExplicit.sort((a: any, b: any) => a.start - b.start);
 
-          maskedContent = maskedContent.replace(searchRegex, replacement);
+        let lastIndex = 0;
+        const maskedParts: string[] = [];
 
-          this.replacementLog.push({ original: p.word, replaced: replacement });
+        sortedPredictions.forEach((p: { word: string, label: string, start: number, end: number }) => {
+            if (p.start > lastIndex) {
+                maskedParts.push(content.substring(lastIndex, p.start));
+            }
+
+            const replacement = `[${p.label.replace(/^[BI]_/, '')}]`;
+            maskedParts.push(replacement);
+
+            this.replacementLog.push({ original: p.word, replaced: replacement });
+
+            lastIndex = p.end;
         });
 
+        if (lastIndex < content.length) {
+            maskedParts.push(content.substring(lastIndex));
+        }
+
+        const maskedCont = maskedParts.join('');
+
         console.log("Log generated from API:", this.replacementLog);
-        return maskedContent;
+        return maskedCont;
       })
     );
   }
