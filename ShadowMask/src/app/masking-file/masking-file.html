@@ -96,6 +96,13 @@
   </div>
 
 </div> -->
+<!-- Processing Popup -->
+<div class="overlay" *ngIf="isGenerating">
+  <div class="popup">
+    <span class="spinner"></span>
+    <p>🔄 Processing masking, please wait...</p>
+  </div>
+</div>
 
 <!-- <p class="text-xs">fileReady: {{ fileReady }}</p> -->
 <div class="wrapper">
@@ -270,6 +277,16 @@
     >🔁 SAME DATA RANDOMIZED</button>
   </div>
 
+
+  <!-- Warning for ALL RANDOMIZED -->
+  <div *ngIf="clickedButton === 'all-randomized'" class="warning-box">
+    ⚠️ Randomizing all values may affect LLM output.
+  </div>
+
+  <!-- Warning if replacing with full sentences -->
+  <div *ngIf="clickedButton === 'value'" class="warning-box">
+    ⚠️ Replacing with sentences, then altered by llm, will cause unmasking to fail.
+  </div>
 
   <!-- TABEL OUTPUT BERDASARKAN TIPE -->
   <table *ngIf="activePreviewType === 'valueCategory'">

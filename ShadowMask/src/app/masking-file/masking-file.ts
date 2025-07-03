@@ -23,7 +23,7 @@ export class MaskingFile implements OnInit {
   fileName: string = '';
   maskedContent = '';
   originalContent = '';
-  // isGenerating = false;
+  isGenerating = false;
 
   // originalContent = 'My phone number is 123-456-7890 and my email is john@example.com';
   // maskedContent = 'My phone number is ***-***-**** and my email is ****@example.com';
@@ -120,6 +120,7 @@ export class MaskingFile implements OnInit {
       return;
     }
 
+    this.isGenerating = true;
     const file = input.files?.[0];
     this.fileName = file.name;
     const fileType = file.type;
@@ -234,7 +235,7 @@ export class MaskingFile implements OnInit {
       this.generatePreviewTables();
       this.generateDiffTokens();
 
-  } else {
+    } else {
       alert('Unsupported file type. Please upload .txt, .pdf, or .docx');
     }
   }
@@ -254,10 +255,12 @@ export class MaskingFile implements OnInit {
             this.generatePreviewTables();
             this.generateDiffTokens();
             this.fileReady = true;
+            this.isGenerating = false;
             console.log("Log generated from APIS:", this.replacementLog)
           },
           error: (err) => {
             console.error("API Error:", err);
+            this.isGenerating = false;
             this.fileReady = false; // Optionally show an error state
           }
         });
