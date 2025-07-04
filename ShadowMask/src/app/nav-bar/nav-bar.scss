@@ -1,27 +1,111 @@
-.navbar {
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  background-color: #1f2937;
-  padding: 1rem 2rem;
+.toggle-btn-fixed {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 2000;
+  background: #1f2937;
+  color: white;
+  border: none;
+  padding: 0.5rem 0.8rem;
+  font-size: 1.2rem;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+
+  &:hover {
+    background-color: #373f4d;
+  }
+}
+
+.sidebar-layout {
   display: flex;
-  align-items: center;
-  gap: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  height: 100vh;
+  overflow: hidden;
 
-  a {
-    color: #f9fafb;
-    font-weight: 500;
-    text-decoration: none;
-    padding-bottom: 0.25rem;
-    transition: border-color 0.3s;
 
-    &.active {
-      border-bottom: 2px solid #3b82f6;
+  .sidebar {
+    background-color: #1f2937;
+    color: white;
+    width: 200px;
+    padding-top: 4rem;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+    z-index: 1000;
+
+    .nav-links {
+      display: flex;
+      flex-direction: column;
+      transition: opacity 0.2s ease;
     }
 
-    &:hover {
-      border-bottom: 2px solid #64748b; // sedikit efek hover tapi tetap soft
+    a {
+         display: flex;              // horizontal layout
+         align-items: center;        // vertical center
+         gap: 0.5rem;                // spacing between icon and text
+         overflow-x: hidden;
+         white-space: nowrap;
+         text-overflow: ellipsis;
+         color: #f9fafb;
+         padding: 12px 20px;
+         text-decoration: none;
+         font-weight: 650;
+         transition: background-color 0.3s ease;
+
+      span {
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+      &.active {
+        background-color: #3b82f6;
+      }
+
+      &:hover {
+        background-color: #374151;
+      }
     }
+  }
+
+  .main-content {
+    flex-grow: 1;
+    padding: 2rem 1rem;
+    background-color: #f3f4f6;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+  }
+
+  &.sidebar-hidden {
+    .sidebar {
+      width: 0;
+      min-width: 0;
+    }
+
+    .sidebar .nav-links {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .main-content {
+      width: 100%;
+    }
+  }
+}
+
+
+@media (max-width: 1000px) {
+  .sidebar-layout .sidebar {
+    width: 4rem;
+
+    .nav-links a {
+      white-space: nowrap;
+      overflow: hidden;
+    }
+  }
+
+  .hide-on-small{
+    display: none;
   }
 }

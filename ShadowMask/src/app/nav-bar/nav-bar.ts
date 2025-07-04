@@ -15,5 +15,5 @@ const routes: Routes = [
   styleUrl: './nav-bar.scss'
 })
 export class NavBar {
-
+  collapsed = false;
 }

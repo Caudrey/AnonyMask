@@ -1,6 +1,20 @@
-<nav class="navbar">
-  <a routerLink="/masking" routerLinkActive="active">Masking File</a>
-  <a routerLink="/unmasking" routerLinkActive="active">Unmasking File</a>
-  <!-- Add more links here -->
-</nav>
-<router-outlet></router-outlet>
+<div class="sidebar-layout" [class.sidebar-hidden]="collapsed">
+  <!-- Toggle icon sidebar -->
+  <button class="toggle-btn-fixed" (click)="collapsed = !collapsed">
+    ☰
+  </button>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <nav class="nav-links">
+      <a routerLink="/masking" routerLinkActive="active">🛡️ <span class="hide-on-small">Masking</span></a>
+      <a routerLink="/unmasking" routerLinkActive="active">🔓 <span class="hide-on-small">Unmasking</span></a>
+    </nav>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
+
