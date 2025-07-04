@@ -66,6 +66,7 @@ export class MaskingFile implements OnInit {
   isClicked = false;
   clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
+  selectedModel: 'explicit' | 'implicit' = 'explicit';
 
   constructor(private apiService: ApiService) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(

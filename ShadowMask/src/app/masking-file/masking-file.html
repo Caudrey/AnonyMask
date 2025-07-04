@@ -104,6 +104,63 @@
   </div>
 </div>
 
+<!-- <div class="model-tabs">
+  <button
+    [class.active]="selectedModel === 'explicit'"
+    (click)="selectedModel = 'explicit'"
+  >
+    🔍 Explicit Model
+  </button>
+
+  <button
+    [class.active]="selectedModel === 'implicit'"
+    (click)="selectedModel = 'implicit'"
+  >
+    🤖 Implicit Model
+  </button>
+</div> -->
+
+<!-- <div class="tab-header">
+  <button
+    [class.active]="selectedModel === 'explicit'"
+    (click)="selectedModel = 'explicit'"
+  >
+    🔍 Explicit
+  </button>
+  <button
+    [class.active]="selectedModel === 'implicit'"
+    (click)="selectedModel = 'implicit'"
+  >
+    🤖 Implicit
+  </button>
+</div> -->
+
+<div class="horizontal-tabs">
+  <button
+    [class.active]="selectedModel === 'explicit'"
+    (click)="selectedModel = 'explicit'"
+  >
+    🔍 Explicit
+  </button>
+  <button
+    [class.active]="selectedModel === 'implicit'"
+    (click)="selectedModel = 'implicit'"
+  >
+    🤖 Implicit
+  </button>
+</div>
+
+<!-- <div class="main-content">
+  <ng-container *ngIf="selectedModel === 'explicit'">
+    Explicit model content
+  </ng-container>
+
+  <ng-container *ngIf="selectedModel === 'implicit'">
+    Implicit model content
+  </ng-container>
+</div> -->
+
+
 <!-- <p class="text-xs">fileReady: {{ fileReady }}</p> -->
 <div class="wrapper">
   <h2 class="title">🛡️ Privacy Masking System</h2>
