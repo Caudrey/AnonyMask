@@ -336,10 +336,6 @@
 
 
   <div class="mini-navbar" *ngIf="fileReady  && selectedMaskType === 'full'">
-    <button
-      [ngClass]="{ 'clicked': clickedButton === 'value-category' }"
-      (click)="applyLabelCategoryReplacement(); handleClick('value-category')"
-    >🎯 VALUE + CATEGORY</button>
 
     <button
       [ngClass]="{ 'clicked': clickedButton === 'category' }"
@@ -372,33 +368,6 @@
   <div *ngIf="clickedButton === 'value'" class="warning-box">
     ⚠️ Replacing with sentences, then altered by llm, will cause unmasking to fail.
   </div>
-
-  <!-- TABEL OUTPUT BERDASARKAN TIPE -->
-  <table *ngIf="activePreviewType === 'valueCategory'">
-    <thead>
-      <tr>
-        <th>Original Text</th>
-        <th>Type/Category</th>
-        <th>Masked Result</th>
-        <th>Count</th>
-        <th></th> <!-- Kolom hapus -->
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let row of valueCategoryTable; let i = index">
-        <td>{{ row.ori }}</td>
-        <td>{{ row.type }}</td>
-        <td>{{ row.masked }}</td>
-        <td>{{ row.count }}</td>
-        <td>
-          <div class="btn-wrapper">
-            <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-
 
   <table *ngIf="activePreviewType === 'category'">
     <thead>

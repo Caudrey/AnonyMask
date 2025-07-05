@@ -54,9 +54,7 @@ export class MaskingFile implements OnInit {
 
   allRandomizedPreview: Array<{ ori: string, type: string, result: string }> = [];
 
-  activePreviewType: 'valueCategory' | 'category' | 'value' | 'all' | 'same' | null = null;
-
-  valueCategoryTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
+  activePreviewType: 'category' | 'value' | 'all' | 'same' | null = null;
 
   categoryOnlyTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
 
@@ -274,7 +272,6 @@ export class MaskingFile implements OnInit {
     this.clickedButton = '';
     this.clickedPartialButton = null;
 
-    this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
@@ -925,8 +922,6 @@ export class MaskingFile implements OnInit {
   }
 
   applyLabelCategoryReplacement(): void {
-    this.activePreviewType = 'valueCategory';
-
     this.replacementLog = [];
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
@@ -973,31 +968,7 @@ export class MaskingFile implements OnInit {
   }
 
   generatePreviewTables(): void {
-    // VALUE + CATEGORY Table
-    const mapVC = new Map<string, { type: string, masked: string, count: number }>();
-    for (let i = 0; i < this.replacementLog.length; i++) {
-      const ori = this.replacementLog[i].original;
-      const masked = this.replacementLog[i].replaced;
-
-      // Ambil tipe/kategori berdasarkan index dari searchTermsCategory
-      const index = this.searchTermsCategory.findIndex(term => term === ori);
-      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
-
-      if (!mapVC.has(ori)) {
-        mapVC.set(ori, { type, masked, count: 1 });
-      } else {
-        mapVC.get(ori)!.count += 1;
-      }
-    }
-
     this.generateDiffTokens();
-
-    this.valueCategoryTable = Array.from(mapVC.entries()).map(([ori, val]) => ({
-      ori,
-      type: val.type,
-      masked: val.masked,
-      count: val.count
-    }));
 
     // CATEGORY ONLY Table (1 baris per kategori)
     const mapCat = new Map<string, { examples: Set<string>; count: number; type: string }>();
@@ -1116,7 +1087,6 @@ export class MaskingFile implements OnInit {
     // this.clickedButton = null;
     this.clickedPartialButton = null;
     // this.replacementLog = [];
-    this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
@@ -1141,7 +1111,6 @@ export class MaskingFile implements OnInit {
 
     this.replacementLog = [];
     this.activePreviewType = null;
-    this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
 
