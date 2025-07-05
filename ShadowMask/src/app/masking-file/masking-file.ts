@@ -106,6 +106,7 @@ export class MaskingFile implements OnInit {
     // this.generatePreviewTables();
     // this.generateDiffTokens();
     // this.fileReady = true;
+    this.renderHighlightedContent();
   }
 
   isUserFormVisible = false;
