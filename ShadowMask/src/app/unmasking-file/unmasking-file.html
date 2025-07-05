@@ -10,7 +10,7 @@
 
   <div class="upload-box">
     <div class="upload-group">
-      <div class="upload-item">
+      <!-- <div class="upload-item">
         <label>📁 Original File</label>
         <input type="file" (change)="uploadOriginal($event)" />
         <span *ngIf="originalFileName">✅ {{ originalFileName }}</span>
@@ -20,6 +20,12 @@
         <label>🕵️ Masked File</label>
         <input type="file" (change)="uploadMasked($event)" />
         <span *ngIf="maskedFileName">✅ {{ maskedFileName }}</span>
+      </div> -->
+
+      <div class="upload-item">
+        <label>🧠 Masking Log (JSON)</label>
+        <input type="file" (change)="uploadUnmaskingJson($event)" accept=".json" />
+        <span *ngIf="maskedMapping.length">✅ {{ processedMaskedFileName }}</span>
       </div>
 
       <div class="upload-item">
@@ -44,7 +50,7 @@
     🔄 Processing unmasking, please wait...
   </div>
 
-<div *ngIf="fileReady" class="preview-box">
+<!-- <div *ngIf="fileReady" class="preview-box">
   <h3 class="preview-title">Option A: Clean Layout</h3>
   <div class="grid-cols">
     <div>
@@ -64,7 +70,7 @@
       </div>
     </div>
   </div>
-  </div>
+  </div> -->
 
     <!-- ⬇️ MAPPING TABLE TAMPIL SETELAH FILES DAN PREVIEW ADA -->
     <div *ngIf="maskedMapping.length > 0" class="mapping-table-box" class="preview-box">

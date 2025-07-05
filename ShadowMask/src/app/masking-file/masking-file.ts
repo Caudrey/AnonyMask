@@ -438,6 +438,9 @@ export class MaskingFile implements OnInit {
       default:
         alert('Unsupported file type for download.');
     }
+
+    // trigger download mapping original to masked in json format
+    this.downloadJsonMapping();
   }
 
   downloadTextFile(): void {
@@ -1203,6 +1206,29 @@ export class MaskingFile implements OnInit {
 
     this.originalTokensWithDiff = splitTokens(this.originalContent);
     this.maskedTokensWithDiff = splitTokens(this.maskedContent);
+  }
+
+  downloadJsonMapping(): void {
+    if (!this.replacementLog || this.replacementLog.length === 0) {
+      alert('No replacement log available.');
+      return;
+    }
+
+    const jsonStructure = {
+      fileName: this.fileName,
+      modelUsed: this.selectedModel,
+      mapping: this.replacementLog.map(entry => ({
+        original: entry.original,
+        masked: entry.replaced
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(jsonStructure, null, 2)], {
+      type: 'application/json'
+    });
+
+    const downloadFileName = this.fileName.replace(/\.[^/.]+$/, '') + '_masking_log.json';
+    this.triggerDownload(blob, downloadFileName);
   }
 
 }
