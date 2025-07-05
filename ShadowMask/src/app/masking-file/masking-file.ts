@@ -702,8 +702,9 @@ export class MaskingFile implements OnInit {
   // randomizeSpecificContent(
   randomizeSpecificContent(
   typeOrFormat: string = 'mixed',
-  length: number = 8
+  word: string
   ): string {
+    let length = word.length;
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     const digits = '0123456789';
 
@@ -754,9 +755,12 @@ export class MaskingFile implements OnInit {
 
       // mixed - text and number
       case '[Score]':
-        const numLetters = Math.floor(length / 2);
-        const numDigits = length - numLetters;
-        return this.randomStr(numLetters, letters) + this.randomStr(numDigits, digits);
+        const lettersAdd = '+-';
+        const numLettersAdd = word.includes('+') || word.includes('-') ? 1 : 0;
+        const numDigits = this.getDigitLengthOnly(word);
+        const numLetters = length - numDigits - numLettersAdd;
+
+        return this.randomStr(numLetters, letters) + this.randomStr(numDigits, digits) + this.randomStr(numLettersAdd, lettersAdd);
 
       // date
       case '[DOB]':
@@ -775,15 +779,20 @@ export class MaskingFile implements OnInit {
 
       // cm
       case '[Body_Height]':
-        return `${this.randomStr(length, digits)} cm`;
+        length = this.getDigitLengthOnly(word);
+        return `${this.randomStr(length || 3, digits)} cm`;
 
       // kg
       case '[Body_Weight]':
-        return `${this.randomStr(length, digits)} cm`;
+        length = this.getDigitLengthOnly(word);
+        return `${this.randomStr(length || 2, digits)} kg`;
 
       // number/number
       case '[Blood_Pressure]':
-        return `${this.randomStr(length, digits)}/${this.randomStr(length, digits)} mmHg`;
+        const bpParts = word.split('/');
+        const sysLength = this.getDigitLengthOnly(bpParts[0]);
+        const diaLength = this.getDigitLengthOnly(bpParts[1] || '');
+        return `${this.randomStr(sysLength || 3, digits)}/${this.randomStr(diaLength || 2, digits)} mmHg`;
 
       // plat
       case '[Plate]':
@@ -802,6 +811,12 @@ export class MaskingFile implements OnInit {
       default:
         return '';
     }
+  }
+
+  getDigitLengthOnly(word: string): number {
+    // Cari hanya angka (bisa desimal, tapi ambil integer untuk panjang digit)
+    const match = word.match(/\d+/);
+    return match ? match[0].length : 0;
   }
 
   // Generate random int between min and max (inclusive)
@@ -827,7 +842,7 @@ export class MaskingFile implements OnInit {
 
       const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
       result = result.replace(searchRegex, (match) => {
-        const replacement = this.randomizeSpecificContent(type, term.length);
+        const replacement = this.randomizeSpecificContent(type, term);
         this.replacementLog.push({ original: match, replaced: replacement });
         return replacement;
       });
@@ -856,7 +871,8 @@ export class MaskingFile implements OnInit {
     for (let i = 0; i < this.replacementTermsCategory.length; i++) {
       const original = this.searchTermsDataRandomized[i];
       const type = this.replacementTermsCategory[i];
-      const randomized = this.randomizeSpecificContent(type, original.length);    this.replacementTermsRandomized.push(randomized);
+      const randomized = this.randomizeSpecificContent(type, original);
+      this.replacementTermsRandomized.push(randomized);
       this.randomizedPreview.push({
         ori: original,
         type: type,
