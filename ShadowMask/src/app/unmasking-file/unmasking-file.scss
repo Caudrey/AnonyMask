@@ -127,26 +127,25 @@
 }
 
 .text-preview {
-  border: 1px solid #ddd;
-  padding: 12px;
-  background-color: #f9f9f9;
-  white-space: pre-wrap;
-  word-break: break-word;
-  border-radius: 6px;
-  min-height: 120px;
-  font-family: monospace;
-  font-size: 14px;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    user-select: text;
+    white-space: pre-wrap;
+    background: #fdfdfd;
+    min-height: 120px;
 }
 
 .highlight-original {
-  background-color: #ffdede;
+  // background-color: #d7f5ff;
+  background-color:yellow;
   font-weight: bold;
   border-radius: 4px;
   padding: 0 4px;
 }
 
 .highlight-masked {
-  background-color: #d7f5ff;
+  // background-color:#ffdede;
+  background-color:yellow;
   font-weight: bold;
   border-radius: 4px;
   padding: 0 4px;

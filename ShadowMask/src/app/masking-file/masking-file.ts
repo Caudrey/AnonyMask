@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -10,6 +10,13 @@ import { Document, Packer, Paragraph } from 'docx';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from '../services/api';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
+interface HighlightRange {
+  start: number;
+  end: number;
+  text: string;
+}
 
 @Component({
   selector: 'app-masking-file',
@@ -47,9 +54,7 @@ export class MaskingFile implements OnInit {
 
   allRandomizedPreview: Array<{ ori: string, type: string, result: string }> = [];
 
-  activePreviewType: 'valueCategory' | 'category' | 'value' | 'all' | 'same' | null = null;
-
-  valueCategoryTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
+  activePreviewType: 'category' | 'value' | 'all' | 'same' | null = null;
 
   categoryOnlyTable: Array<{ ori: string; type: string; masked: string; count: number }> = [];
 
@@ -67,6 +72,18 @@ export class MaskingFile implements OnInit {
   clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
   selectedModel: 'explicit' | 'implicit' = 'explicit';
+
+  draggedSelections: string[] = [];
+  highlightedOriginalContent: string = '';
+
+  currentSelected: string = '';
+  highlightedContent: string = '';
+
+  isAdding: boolean = false;
+
+  @ViewChild('originalContentPre', { static: false }) originalContentPre!: ElementRef;
+
+
 
   constructor(private apiService: ApiService) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -89,6 +106,7 @@ export class MaskingFile implements OnInit {
     // this.generatePreviewTables();
     // this.generateDiffTokens();
     // this.fileReady = true;
+    this.renderHighlightedContent();
   }
 
   isUserFormVisible = false;
@@ -255,7 +273,6 @@ export class MaskingFile implements OnInit {
     this.clickedButton = '';
     this.clickedPartialButton = null;
 
-    this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
@@ -686,8 +703,9 @@ export class MaskingFile implements OnInit {
   // randomizeSpecificContent(
   randomizeSpecificContent(
   typeOrFormat: string = 'mixed',
-  length: number = 8
+  word: string
   ): string {
+    let length = word.length;
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     const digits = '0123456789';
 
@@ -738,9 +756,12 @@ export class MaskingFile implements OnInit {
 
       // mixed - text and number
       case '[Score]':
-        const numLetters = Math.floor(length / 2);
-        const numDigits = length - numLetters;
-        return this.randomStr(numLetters, letters) + this.randomStr(numDigits, digits);
+        const lettersAdd = '+-';
+        const numLettersAdd = word.includes('+') || word.includes('-') ? 1 : 0;
+        const numDigits = this.getDigitLengthOnly(word);
+        const numLetters = length - numDigits - numLettersAdd;
+
+        return this.randomStr(numLetters, letters) + this.randomStr(numDigits, digits) + this.randomStr(numLettersAdd, lettersAdd);
 
       // date
       case '[DOB]':
@@ -759,15 +780,20 @@ export class MaskingFile implements OnInit {
 
       // cm
       case '[Body_Height]':
-        return `${this.randomStr(length, digits)} cm`;
+        length = this.getDigitLengthOnly(word);
+        return `${this.randomStr(length || 3, digits)} cm`;
 
       // kg
       case '[Body_Weight]':
-        return `${this.randomStr(length, digits)} cm`;
+        length = this.getDigitLengthOnly(word);
+        return `${this.randomStr(length || 2, digits)} kg`;
 
       // number/number
       case '[Blood_Pressure]':
-        return `${this.randomStr(length, digits)}/${this.randomStr(length, digits)} mmHg`;
+        const bpParts = word.split('/');
+        const sysLength = this.getDigitLengthOnly(bpParts[0]);
+        const diaLength = this.getDigitLengthOnly(bpParts[1] || '');
+        return `${this.randomStr(sysLength || 3, digits)}/${this.randomStr(diaLength || 2, digits)} mmHg`;
 
       // plat
       case '[Plate]':
@@ -786,6 +812,12 @@ export class MaskingFile implements OnInit {
       default:
         return '';
     }
+  }
+
+  getDigitLengthOnly(word: string): number {
+    // Cari hanya angka (bisa desimal, tapi ambil integer untuk panjang digit)
+    const match = word.match(/\d+/);
+    return match ? match[0].length : 0;
   }
 
   // Generate random int between min and max (inclusive)
@@ -811,7 +843,7 @@ export class MaskingFile implements OnInit {
 
       const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
       result = result.replace(searchRegex, (match) => {
-        const replacement = this.randomizeSpecificContent(type, term.length);
+        const replacement = this.randomizeSpecificContent(type, term);
         this.replacementLog.push({ original: match, replaced: replacement });
         return replacement;
       });
@@ -840,7 +872,8 @@ export class MaskingFile implements OnInit {
     for (let i = 0; i < this.replacementTermsCategory.length; i++) {
       const original = this.searchTermsDataRandomized[i];
       const type = this.replacementTermsCategory[i];
-      const randomized = this.randomizeSpecificContent(type, original.length);    this.replacementTermsRandomized.push(randomized);
+      const randomized = this.randomizeSpecificContent(type, original);
+      this.replacementTermsRandomized.push(randomized);
       this.randomizedPreview.push({
         ori: original,
         type: type,
@@ -868,6 +901,9 @@ export class MaskingFile implements OnInit {
     this.activePreviewType = 'category';
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
+
+    this.isCategoryTableVisible = true;
+    this.applyLabelCategoryReplacement();
 
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const search = this.searchTermsCategory[i];
@@ -902,12 +938,9 @@ export class MaskingFile implements OnInit {
       };
     });
 
-    this.isCategoryTableVisible = true;
   }
 
   applyLabelCategoryReplacement(): void {
-    this.activePreviewType = 'valueCategory';
-
     this.replacementLog = [];
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
@@ -954,31 +987,7 @@ export class MaskingFile implements OnInit {
   }
 
   generatePreviewTables(): void {
-    // VALUE + CATEGORY Table
-    const mapVC = new Map<string, { type: string, masked: string, count: number }>();
-    for (let i = 0; i < this.replacementLog.length; i++) {
-      const ori = this.replacementLog[i].original;
-      const masked = this.replacementLog[i].replaced;
-
-      // Ambil tipe/kategori berdasarkan index dari searchTermsCategory
-      const index = this.searchTermsCategory.findIndex(term => term === ori);
-      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
-
-      if (!mapVC.has(ori)) {
-        mapVC.set(ori, { type, masked, count: 1 });
-      } else {
-        mapVC.get(ori)!.count += 1;
-      }
-    }
-
     this.generateDiffTokens();
-
-    this.valueCategoryTable = Array.from(mapVC.entries()).map(([ori, val]) => ({
-      ori,
-      type: val.type,
-      masked: val.masked,
-      count: val.count
-    }));
 
     // CATEGORY ONLY Table (1 baris per kategori)
     const mapCat = new Map<string, { examples: Set<string>; count: number; type: string }>();
@@ -1085,6 +1094,7 @@ export class MaskingFile implements OnInit {
       this.replacementLog.map(r => r.replaced)
     );
     this.generatePreviewTables();
+    this.renderHighlightedContent();
   }
 
   handleClick(buttonId: string): void {
@@ -1096,7 +1106,6 @@ export class MaskingFile implements OnInit {
     // this.clickedButton = null;
     this.clickedPartialButton = null;
     // this.replacementLog = [];
-    this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
@@ -1121,7 +1130,6 @@ export class MaskingFile implements OnInit {
 
     this.replacementLog = [];
     this.activePreviewType = null;
-    this.valueCategoryTable = [];
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
 
@@ -1296,5 +1304,91 @@ export class MaskingFile implements OnInit {
     const downloadFileName = this.fileName.replace(/\.[^/.]+$/, '') + '_masking_log.json';
     this.triggerDownload(blob, downloadFileName);
   }
+
+    getHighlightedHTML(content: string, selections: string[]): string {
+  let highlighted = content;
+
+  selections.forEach(sel => {
+    // Escape special regex characters
+    const safeSel = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${safeSel})`, 'g');
+    highlighted = highlighted.replace(regex, `<span class="highlight">$1</span>`);
+  });
+
+  return highlighted;
+}
+
+  onSelection(): void {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+
+    if (selectedText) {
+      this.currentSelected = selectedText;
+      this.renderHighlightedContent();
+    }
+
+
+    if (!this.isAdding || !selectedText) return;
+
+    if (!this.draggedSelections.includes(selectedText)) {
+      this.draggedSelections.push(selectedText);
+    }
+
+    this.highlightedOriginalContent = this.getHighlightedHTML(this.originalContent, this.draggedSelections);
+
+    this.onWordClick(selectedText);
+    this.generatePreviewTables();
+    selection?.removeAllRanges();
+  }
+
+
+
+  confirmCurrentSelection(): void {
+    if (this.currentSelected && !this.searchTermsUser.includes(this.currentSelected)) {
+      this.searchTermsUser.push(this.currentSelected);
+      this.currentSelected = '';
+      this.renderHighlightedContent();
+    }
+  }
+
+  renderHighlightedContent(): void {
+    let html = this.originalContent;
+
+    this.searchTermsUser.forEach(term => {
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeTerm})`, 'g');
+      html = html.replace(regex, `<mark class="confirmed">$1</mark>`);
+    });
+
+    if (this.currentSelected  && this.isAdding) {
+      const safeCurrent = this.currentSelected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeCurrent})(?![^<]*<\/mark>)`, 'g'); // skip already marked
+      html = html.replace(regex, `<mark class="temporary">$1</mark>`);
+    }
+
+    this.highlightedContent = html.replace(/\n/g, '<br>');
+  }
+
+    onSelectionBound!: () => void;
+
+
+  startAdding() {
+    this.isAdding = true;
+    const pre = this.originalContentPre?.nativeElement;
+    if (pre) {
+      pre.addEventListener('mouseup', this.onSelectionBound);
+    }
+  }
+
+  doneAdding() {
+    this.isAdding = false;
+    const pre = this.originalContentPre?.nativeElement;
+    if (pre) {
+      pre.removeEventListener('mouseup', this.onSelectionBound);
+    }
+    this.draggedSelections = [];
+  }
+
+
 
 }
