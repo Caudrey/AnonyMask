@@ -186,7 +186,7 @@
     </div>
   </div>
 
-  <!-- Option A -->
+  <!-- Option A
   <div *ngIf="fileReady" class="preview-box">
   <h3 class="preview-title">🔐 Masking Preview</h3>
     <div class="grid-cols">
@@ -216,7 +216,35 @@
           </div>
       </div>
     </div>
+  </div> -->
+
+  <div *ngIf="fileReady" class="preview-box">
+  <h3 class="preview-title">🔐 Masking Preview</h3>
+    <div class="grid-cols">
+      <div>
+        <div class="title-original-file">
+          <h4>📄 Original File</h4>
+          <div class="tooltip-wrapper">
+             <button class="rounded-btn" (click)="startAdding()">➕ Add</button>
+             <div class="tooltip-bubble">🖱️ Drag to add new words!</div>
+          </div>
+
+          <button *ngIf="isAdding" (click)="doneAdding()" class="rounded-btn done">✅ Done</button>
+        </div>
+        <div #originalContentContainer class="text-box" (mouseup)="onSelection()" [innerHTML]="highlightedContent"></div>
+      </div>
+      <div>
+        <div class="title-original-file">
+          <h4>🛡️ Masked Output</h4>
+        </div>
+        <div class="text-box masked" [innerHTML]="highlightedContent"></div>
+        <!-- <div class="text-box masked">
+          {{ maskedContent }}
+        </div> -->
+      </div>
+    </div>
   </div>
+
 
   <!-- <div *ngIf="fileReady">
     <h3 class="subtitle">Option B: Card Layout</h3>

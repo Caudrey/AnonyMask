@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -10,6 +10,13 @@ import { Document, Packer, Paragraph } from 'docx';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from '../services/api';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+
+interface HighlightRange {
+  start: number;
+  end: number;
+  text: string;
+}
 
 @Component({
   selector: 'app-masking-file',
@@ -67,6 +74,18 @@ export class MaskingFile implements OnInit {
   clickedButton: string = '';
   maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
   selectedModel: 'explicit' | 'implicit' = 'explicit';
+
+  draggedSelections: string[] = [];
+  highlightedOriginalContent: string = '';
+
+  currentSelected: string = '';
+  highlightedContent: string = '';
+
+  isAdding: boolean = false;
+
+  @ViewChild('originalContentPre', { static: false }) originalContentPre!: ElementRef;
+
+
 
   constructor(private apiService: ApiService) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -1085,6 +1104,7 @@ export class MaskingFile implements OnInit {
       this.replacementLog.map(r => r.replaced)
     );
     this.generatePreviewTables();
+    this.renderHighlightedContent();
   }
 
   handleClick(buttonId: string): void {
@@ -1296,5 +1316,91 @@ export class MaskingFile implements OnInit {
     const downloadFileName = this.fileName.replace(/\.[^/.]+$/, '') + '_masking_log.json';
     this.triggerDownload(blob, downloadFileName);
   }
+
+    getHighlightedHTML(content: string, selections: string[]): string {
+  let highlighted = content;
+
+  selections.forEach(sel => {
+    // Escape special regex characters
+    const safeSel = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${safeSel})`, 'g');
+    highlighted = highlighted.replace(regex, `<span class="highlight">$1</span>`);
+  });
+
+  return highlighted;
+}
+
+  onSelection(): void {
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+
+    if (selectedText) {
+      this.currentSelected = selectedText;
+      this.renderHighlightedContent();
+    }
+
+
+    if (!this.isAdding || !selectedText) return;
+
+    if (!this.draggedSelections.includes(selectedText)) {
+      this.draggedSelections.push(selectedText);
+    }
+
+    this.highlightedOriginalContent = this.getHighlightedHTML(this.originalContent, this.draggedSelections);
+
+    this.onWordClick(selectedText);
+    this.generatePreviewTables();
+    selection?.removeAllRanges();
+  }
+
+
+
+  confirmCurrentSelection(): void {
+    if (this.currentSelected && !this.searchTermsUser.includes(this.currentSelected)) {
+      this.searchTermsUser.push(this.currentSelected);
+      this.currentSelected = '';
+      this.renderHighlightedContent();
+    }
+  }
+
+  renderHighlightedContent(): void {
+    let html = this.originalContent;
+
+    this.searchTermsUser.forEach(term => {
+      const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeTerm})`, 'g');
+      html = html.replace(regex, `<mark class="confirmed">$1</mark>`);
+    });
+
+    if (this.currentSelected  && this.isAdding) {
+      const safeCurrent = this.currentSelected.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${safeCurrent})(?![^<]*<\/mark>)`, 'g'); // skip already marked
+      html = html.replace(regex, `<mark class="temporary">$1</mark>`);
+    }
+
+    this.highlightedContent = html.replace(/\n/g, '<br>');
+  }
+
+    onSelectionBound!: () => void;
+
+
+  startAdding() {
+    this.isAdding = true;
+    const pre = this.originalContentPre?.nativeElement;
+    if (pre) {
+      pre.addEventListener('mouseup', this.onSelectionBound);
+    }
+  }
+
+  doneAdding() {
+    this.isAdding = false;
+    const pre = this.originalContentPre?.nativeElement;
+    if (pre) {
+      pre.removeEventListener('mouseup', this.onSelectionBound);
+    }
+    this.draggedSelections = [];
+  }
+
+
 
 }
