@@ -11,8 +11,13 @@ export class ApiService {
   constructor(private http: HttpClient) { }
 
   // Method to call the /predict endpoint
-  getPredictions(text: string): Observable<any> {
+  getPredictionsExplicit(text: string): Observable<any> {
     const body = { text: text };
-    return this.http.post<any>(`${this.apiUrl}/predict`, body);
+    return this.http.post<any>(`${this.apiUrl}/predictExplicit`, body);
+  }
+
+  getPredictionsImplicit(text: string): Observable<any> {
+    const body = { text: text };
+    return this.http.post<any>(`${this.apiUrl}/predictImplicit`, body);
   }
 }

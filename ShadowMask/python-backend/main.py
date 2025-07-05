@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from masker import mask_text
 from explicit_model.model import predict_explicit_pii
 from implicit_model.model import predict_implicit_pii
-from mask_config import set_mask_words, set_excluded_words
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
 
@@ -25,32 +23,28 @@ app.add_middleware(
 class PredictionRequest(BaseModel):
     text: str
 
-@app.post("/predict")
+@app.post("/predictExplicit")
 def predict(request: PredictionRequest):
     startDate = datetime.now()
 
-    resultsExplicit = predict_explicit_pii(request.text)
-    resultsImplicit = predict_implicit_pii(request.text)
-    print("Hai")
+    results = predict_explicit_pii(request.text)
 
     endDate = datetime.now()
     elapsed = (endDate - startDate).total_seconds()
     print(f"Start Date: {startDate}")
     print(f"End Date: {endDate}")
     print(f"Duration: {elapsed:.2f} seconds")
-    return {"predictionsExplicit": resultsExplicit, "predictionsImplicit": resultsImplicit}
+    return {"predictions": results}
 
-@app.post("/mask")
-def run_masking(request: PredictionRequest):
-    masked = mask_text(request.text)
-    return {"masked": masked}
+@app.post("/predictImplicit")
+def predict(request: PredictionRequest):
+    startDate = datetime.now()
 
-@app.post("/config/add-words")
-def add_words(words: list[str]):
-    set_mask_words(words)
-    return {"status": "added", "words": words}
+    results = predict_implicit_pii(request.text)
 
-@app.post("/config/exclude-words")
-def exclude_words(words: list[str]):
-    set_excluded_words(words)
-    return {"status": "excluded", "words": words}
+    endDate = datetime.now()
+    elapsed = (endDate - startDate).total_seconds()
+    print(f"Start Date: {startDate}")
+    print(f"End Date: {endDate}")
+    print(f"Duration: {elapsed:.2f} seconds")
+    return {"predictions": results}

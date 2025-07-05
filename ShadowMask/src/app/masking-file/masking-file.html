@@ -138,13 +138,13 @@
 <div class="horizontal-tabs">
   <button
     [class.active]="selectedModel === 'explicit'"
-    (click)="selectedModel = 'explicit'"
+    (click)="selectModel('explicit')"
   >
     🔍 Explicit
   </button>
   <button
     [class.active]="selectedModel === 'implicit'"
-    (click)="selectedModel = 'implicit'"
+    (click)="selectModel('implicit')"
   >
     🤖 Implicit
   </button>

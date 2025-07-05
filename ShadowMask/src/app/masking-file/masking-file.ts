@@ -97,7 +97,6 @@ export class MaskingFile implements OnInit {
     this.isUserFormVisible = !this.isUserFormVisible;
   }
 
-
   onUpload(event: Event): void {
     const input = event.target as HTMLInputElement;
 
@@ -111,7 +110,6 @@ export class MaskingFile implements OnInit {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'text/csv'
     ];
-
     // 🔒 Reject unsupported file types BEFORE any processing
     if (!supportedTypes.includes(input.files?.[0].type)) {
       alert(`❌ Unsupported file type: ${input.files?.[0].name}\nPlease upload a .txt, .pdf, .docx, .xlsx, .xls, or .csv file.`);
@@ -241,20 +239,54 @@ export class MaskingFile implements OnInit {
     }
   }
 
+  selectModel(modelType: 'explicit' | 'implicit'): void {
+    // Don't re-process if the same model is clicked again or if no file is ready
+
+    console.log("Haii" + modelType + this.selectedModel)
+
+    if (!this.fileReady || this.selectedModel === modelType) {
+      return;
+    }
+
+    this.selectedModel = modelType;
+
+    this.activePreviewType = null;
+    this.selectedMaskType = null;
+    this.clickedButton = '';
+    this.clickedPartialButton = null;
+
+    this.valueCategoryTable = [];
+    this.categoryOnlyTable = [];
+    this.valueOnlyTable = [];
+    this.allRandomizedPreview = [];
+    this.randomizedPreview = [];
+    this.partialMaskedStats = [];
+    this.originalTokensWithDiff = [];
+    this.maskedTokensWithDiff = [];
+
+    // **NEW:** Also reset the main masked content display to the original text
+    // This provides immediate visual feedback that a reset has occurred.
+    if (this.originalContent) {
+        this.maskedContent = this.originalContent;
+    }
+
+    this.processOriginalContent(); // Re-process the original content with the new model
+  }
 
   processOriginalContent(): void {
-    console.log("Test")
+
     this.maskPrivacy(this.originalContent).subscribe({
           next: (resultString) => {
             // This code runs ONLY after the API call is successful
             console.log("API call successful, result received!");
             this.maskedContent = resultString;
 
-            this.addPredictionsToSearchLists(this.replacementLog);
 
             // The replacementLog is now set by the API response, so we can generate tables
-            this.generatePreviewTables();
             this.generateDiffTokens();
+            this.generatePreviewTables();
+            this.addPredictionsToSearchLists(this.replacementLog);
+            console.log("Haii" + this.categoryOnlyTable)
             this.fileReady = true;
             this.isGenerating = false;
             console.log("Log generated from APIS:", this.replacementLog)
@@ -265,6 +297,7 @@ export class MaskingFile implements OnInit {
             this.fileReady = false; // Optionally show an error state
           }
         });
+
   }
 
 
@@ -279,53 +312,84 @@ export class MaskingFile implements OnInit {
   //     });
   // }
 
-  // The function now returns an Observable that will eventually emit the masked string
+
   maskPrivacy(content: string): Observable<string> {
-    // 1. Call your ApiService to get the predictions from the Python model
-    return this.apiService.getPredictions(content).pipe(
-      // 2. Use the 'map' operator to transform the API response into the final masked string
-      map(response => {
-        let maskedContent = content;
-        const predictionsExplicit = response.predictionsExplicit;
-        const predictionsImplicit  = response.predictionsImplicit;
+    if (this.selectedModel == 'explicit') {
+        return this.apiService.getPredictionsExplicit(content).pipe(
+          map(response => {
+            const predictions = response.predictions;
 
-        // 3. Clear the log and create a new one based on the API's findings
-        this.replacementLog = [];
+            this.replacementLog = [];
 
-        if (!predictionsExplicit) {
-          return content; // Return original content if there are no predictions
-        }
-
-        // 4. Loop through the predictions and replace them in the content
-        // This logic uses the start/end offsets from the API for precise replacement
-        const sortedPredictions = predictionsExplicit.sort((a: any, b: any) => a.start - b.start);
-
-        let lastIndex = 0;
-        const maskedParts: string[] = [];
-
-        sortedPredictions.forEach((p: { word: string, label: string, start: number, end: number }) => {
-            if (p.start > lastIndex) {
-                maskedParts.push(content.substring(lastIndex, p.start));
+            if (!predictions) {
+              return content; // Return original content if there are no predictions
             }
 
-            const replacement = `[${p.label.replace(/^[BI]_/, '')}]`;
-            maskedParts.push(replacement);
+            const sortedPredictions = predictions.sort((a: any, b: any) => a.start - b.start);
 
-            this.replacementLog.push({ original: p.word, replaced: replacement });
+            let lastIndex = 0;
+            const maskedParts: string[] = [];
 
-            lastIndex = p.end;
-        });
+            sortedPredictions.forEach((p: { word: string, label: string, start: number, end: number }) => {
+                if (p.start > lastIndex) {
+                    maskedParts.push(content.substring(lastIndex, p.start));
+                }
 
-        if (lastIndex < content.length) {
-            maskedParts.push(content.substring(lastIndex));
-        }
+                const replacement = `[${p.label.replace(/^[BI]_/, '')}]`;
+                maskedParts.push(replacement);
 
-        const maskedCont = maskedParts.join('');
+                this.replacementLog.push({ original: p.word, replaced: replacement });
 
-        console.log("Log generated from API:", this.replacementLog);
-        return maskedCont;
-      })
-    );
+                lastIndex = p.end;
+            });
+
+            if (lastIndex < content.length) {
+                maskedParts.push(content.substring(lastIndex));
+            }
+
+            const maskedCont = maskedParts.join('');
+
+            console.log("Log generated from API Explicit:", this.replacementLog);
+            return maskedCont;
+          })
+        );
+    } else {
+      return this.apiService.getPredictionsImplicit(content).pipe(
+        map(response => {
+            // The API now returns a list of objects with sentence, topics, start, and end
+            const predictions = response.predictions;
+            this.replacementLog = [];
+
+            // This handles cases where the API returns {} or an empty list [].
+            if (!predictions || !Array.isArray(predictions) || predictions.length === 0) {
+                return content;
+            }
+
+            // 3. Sort predictions in REVERSE order of their start position.
+            // This is critical to avoid messing up the indices of subsequent replacements.
+            const sortedPredictions = predictions.sort((a: any, b: any) => b.start - a.start);
+            let maskedCont = content;
+
+            // 4. Loop through the predictions and replace the original sentence with a mask
+            sortedPredictions.forEach((prediction: { sentence: string, predicted_topics: string[], start: number, end: number }) => {
+                const topics = prediction.predicted_topics.join(', ');
+                const replacement = `[IMPLICIT: ${topics.toUpperCase()}]`;
+
+                // Replace the content from start to end with the new mask
+                maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
+
+                // Add a detailed entry to the log
+                this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
+            });
+
+            // The replacementLog is built in reverse, so we reverse it back for correct UI display
+            this.replacementLog.reverse();
+
+            console.log("Log generated from API Implicit:", this.replacementLog);
+            return maskedCont; // Return the fully masked content
+        })
+      );
+    }
   }
 
   addPredictionsToSearchLists(log: { original: string, replaced: string }[]): void {
@@ -925,6 +989,8 @@ export class MaskingFile implements OnInit {
       const index = this.searchTermsCategory.findIndex(term => term === original);
       const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
 
+
+
       if (!mapCat.has(masked)) {
         mapCat.set(masked, {
           examples: new Set([original]),
@@ -1036,7 +1102,7 @@ export class MaskingFile implements OnInit {
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
     this.partialMaskedStats = [];
-}
+  }
 
   selectMaskType(type: 'partial' | 'full') {
     this.selectedMaskType = type;

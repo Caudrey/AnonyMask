@@ -4,4 +4,6 @@ setfit
 fastapi
 uvicorn
 transformers
+sentence-transformers
+regex
 
