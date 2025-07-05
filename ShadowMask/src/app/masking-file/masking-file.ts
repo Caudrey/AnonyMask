@@ -885,6 +885,9 @@ export class MaskingFile implements OnInit {
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
 
+    this.isCategoryTableVisible = true;
+    this.applyLabelCategoryReplacement();
+
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const search = this.searchTermsCategory[i];
       const replace = this.replacementTermsCategory[i];
@@ -918,7 +921,6 @@ export class MaskingFile implements OnInit {
       };
     });
 
-    this.isCategoryTableVisible = true;
   }
 
   applyLabelCategoryReplacement(): void {
