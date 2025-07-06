@@ -39,6 +39,8 @@ export class MaskingFile implements OnInit {
   replacementTermsUser: string[] = [];
 
   searchTermsCategory: string[] = [];
+  categoryFromModel: string[] = [];
+  categoryCounts: Record<string, number> = {};
   replacementTermsCategory: string[] = [];
 
   searchTermsAllRandomized: string[] = [];
@@ -262,11 +264,12 @@ export class MaskingFile implements OnInit {
 
     console.log("Haii" + modelType + this.selectedModel)
 
-    if (!this.fileReady || this.selectedModel === modelType) {
+    this.selectedModel = modelType;
+
+    if (!this.fileReady) {
       return;
     }
-
-    this.selectedModel = modelType;
+    this.isGenerating = true;
 
     this.activePreviewType = null;
     this.selectedMaskType = null;
@@ -281,6 +284,8 @@ export class MaskingFile implements OnInit {
     this.originalTokensWithDiff = [];
     this.maskedTokensWithDiff = [];
 
+    this.clearTermAndReplacement();
+
     // **NEW:** Also reset the main masked content display to the original text
     // This provides immediate visual feedback that a reset has occurred.
     if (this.originalContent) {
@@ -290,8 +295,14 @@ export class MaskingFile implements OnInit {
     this.processOriginalContent(); // Re-process the original content with the new model
   }
 
-  processOriginalContent(): void {
+  resetCategoryCounts(): void {
+    Object.keys(this.categoryCounts).forEach(key => {
+      this.categoryCounts[key] = 0;
+    });
+  }
 
+  processOriginalContent(): void {
+    this.resetCategoryCounts();
     this.maskPrivacy(this.originalContent).subscribe({
           next: (resultString) => {
             // This code runs ONLY after the API call is successful
@@ -317,7 +328,19 @@ export class MaskingFile implements OnInit {
 
   }
 
+  clearTermAndReplacement(){
+    this.searchTermsUser = [];
+    this.replacementTermsUser = [];
 
+    this.searchTermsCategory = [];
+    this.categoryFromModel = [];
+    this.replacementTermsCategory = [];
+
+    this.searchTermsAllRandomized = [];
+
+    this.searchTermsDataRandomized = [];
+    this.replacementTermsRandomized = [];
+  }
   // maskPrivacy(content: string): string {
   //   this.replacementLog = []; // Clear previous log
   //   return content.replace(
@@ -352,7 +375,11 @@ export class MaskingFile implements OnInit {
                     maskedParts.push(content.substring(lastIndex, p.start));
                 }
 
-                const replacement = `[${p.label.replace(/^[BI]_/, '')}]`;
+                const category = p.label.replace(/^[BI]_/, '');
+                this.categoryFromModel.push(category);
+                const replacement = this.checkCategoryCount(category, p.word);
+                console.log("replace: " + p.word + " , " + replacement);
+
                 maskedParts.push(replacement);
 
                 this.replacementLog.push({ original: p.word, replaced: replacement });
@@ -390,7 +417,10 @@ export class MaskingFile implements OnInit {
             // 4. Loop through the predictions and replace the original sentence with a mask
             sortedPredictions.forEach((prediction: { sentence: string, predicted_topics: string[], start: number, end: number }) => {
                 const topics = prediction.predicted_topics.join(', ');
-                const replacement = `[IMPLICIT: ${topics.toUpperCase()}]`;
+                const category = topics;
+                this.categoryFromModel.push(category);
+                const replacement = this.checkCategoryCount(category, prediction.sentence);
+                console.log("replace: " + prediction.sentence + " , " + replacement);
 
                 // Replace the content from start to end with the new mask
                 maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
@@ -400,6 +430,7 @@ export class MaskingFile implements OnInit {
             });
 
             // The replacementLog is built in reverse, so we reverse it back for correct UI display
+            this.categoryFromModel.reverse();
             this.replacementLog.reverse();
 
             console.log("Log generated from API Implicit:", this.replacementLog);
@@ -407,6 +438,20 @@ export class MaskingFile implements OnInit {
         })
       );
     }
+  }
+
+   checkCategoryCount(category: string, word: string): string {
+    // Check if this word is already in the log
+    const existing = this.replacementLog.find(pair => pair.original === word);
+    if (existing) {
+      return existing.replaced;
+    }
+
+    const count = this.categoryCounts[category] || 0;
+
+    this.categoryCounts[category] = count + 1;
+
+    return count === 0 ? `[${category}]` : `[${category}_${count}]`;
   }
 
   addPredictionsToSearchLists(log: { original: string, replaced: string }[]): void {
@@ -670,12 +715,22 @@ export class MaskingFile implements OnInit {
     this.replacementLog = []; // Clear previous log
 
     for (let i = 0; i < searchTerms.length; i++) {
-    const searchRegex = new RegExp('\\b' + this.escapeRegExp(searchTerms[i]) + '\\b', 'g');
+      const search = searchTerms[i];
+      const replacement = replacementTerms[i];
 
-    result = result.replace(searchRegex, (match) => {
-          this.replacementLog.push({ original: match, replaced: replacementTerms[i] });
-          return replacementTerms[i];
-    });
+      const escapedSearch = this.escapeRegExp(search);
+
+      // If term has non-word characters (like [ ] or @), or is longer than 3 chars → allow in-word match
+      const isSafeToReplaceAnywhere = search.length > 2 || /\W/.test(search);
+
+      const regex = isSafeToReplaceAnywhere
+        ? new RegExp(escapedSearch, 'g')              // Replace anywhere
+        : new RegExp(`\\b${escapedSearch}\\b`, 'g');  // Word-boundary match for short/plain words
+
+      result = result.replace(regex, (match) => {
+        this.replacementLog.push({ original: match, replaced: replacement });
+        return replacement;
+      });
 
     //   // Regex: cari term yang bisa diikuti tanda baca (tapi bukan bagian dari term)
     //   const searchRegex = new RegExp(`\\b(${this.escapeRegExp(searchTerms[i])})([.,!?;:]?)\\b`, 'g');
@@ -711,8 +766,8 @@ export class MaskingFile implements OnInit {
 
     switch (typeOrFormat) {
       // email
-      case '[Mail]':
-      case '[Work_Mail]':
+      case 'Mail':
+      case 'Work_Mail':
         const userLength = Math.floor(length * 0.6);
         const domainLength = Math.max(3, Math.floor(length * 0.3));
         const user = this.randomStr(userLength, letters + digits);
@@ -720,42 +775,42 @@ export class MaskingFile implements OnInit {
         return `${user}@${domain}.com`;
 
       // phone number
-      case '[Phone_Number]':
-      case '[Work_Phone_Number]':
+      case 'Phone_Number':
+      case 'Work_Phone_Number':
         const number = Math.max(6, length - 3); // accounting for '+62'
         return '+62' + this.randomStr(number, digits);
 
       // text only
-      case '[Name]':
-      case '[Nickname]':
-      case '[Location]':
-      case '[POB]':
-      case '[Parent_Name]':
-      case '[Username]':
-      case '[Criminal_Hist]':
-      case '[Edu_Hist]':
-      case '[Med_Hist]':
-      case '[Occ_Hist]':
-      case '[Asset]':
-      case '[Address]':
-      case '[Race]':
-      case '[Religion]':
-      case '[Marr_Status]':
-      case '[Gender]':
-      case '[Blood_Type]':
+      case 'Name':
+      case 'Nickname':
+      case 'Location':
+      case 'POB':
+      case 'Parent_Name':
+      case 'Username':
+      case 'Criminal_Hist':
+      case 'Edu_Hist':
+      case 'Med_Hist':
+      case 'Occ_Hist':
+      case 'Asset':
+      case 'Address':
+      case 'Race':
+      case 'Religion':
+      case 'Marr_Status':
+      case 'Gender':
+      case 'Blood_Type':
         return this.randomStr(length, letters);
 
       // number only
-      case '[Balance]':
-      case '[Account]':
-      case '[Card_Number]':
-      case '[NIP]':
-      case '[SSN]':
-      case '[Salary]':
+      case 'Balance':
+      case 'Account':
+      case 'Card_Number':
+      case 'NIP':
+      case 'SSN':
+      case 'Salary':
         return this.randomStr(length, digits);
 
       // mixed - text and number
-      case '[Score]':
+      case 'Score':
         const lettersAdd = '+-';
         const numLettersAdd = word.includes('+') || word.includes('-') ? 1 : 0;
         const numDigits = this.getDigitLengthOnly(word);
@@ -764,7 +819,7 @@ export class MaskingFile implements OnInit {
         return this.randomStr(numLetters, letters) + this.randomStr(numDigits, digits) + this.randomStr(numLettersAdd, lettersAdd);
 
       // date
-      case '[DOB]':
+      case 'DOB':
         //   // Random date between 2000-01-01 and 2025-12-31
         //   const start = new Date(2000, 0, 1).getTime();
         //   const end = new Date(2025, 11, 31).getTime();
@@ -779,24 +834,24 @@ export class MaskingFile implements OnInit {
         return `${year}-${mm}-${dd}`; // e.g., "1992-04-15"
 
       // cm
-      case '[Body_Height]':
+      case 'Body_Height':
         length = this.getDigitLengthOnly(word);
         return `${this.randomStr(length || 3, digits)} cm`;
 
       // kg
-      case '[Body_Weight]':
+      case 'Body_Weight':
         length = this.getDigitLengthOnly(word);
         return `${this.randomStr(length || 2, digits)} kg`;
 
       // number/number
-      case '[Blood_Pressure]':
+      case 'Blood_Pressure':
         const bpParts = word.split('/');
         const sysLength = this.getDigitLengthOnly(bpParts[0]);
         const diaLength = this.getDigitLengthOnly(bpParts[1] || '');
         return `${this.randomStr(sysLength || 3, digits)}/${this.randomStr(diaLength || 2, digits)} mmHg`;
 
       // plat
-      case '[Plate]':
+      case 'Plate':
         const regionLength = Math.random() < 0.5 ? 1 : 2;
         const region = this.randomStr(regionLength, letters);
 
@@ -808,9 +863,9 @@ export class MaskingFile implements OnInit {
 
         return `${region} ${numbers}${suffix ? ' ' + suffix : ''}`;
 
-      // default empty
+      // default string
       default:
-        return '';
+        return this.randomStr(length, letters);;
     }
   }
 
@@ -839,9 +894,13 @@ export class MaskingFile implements OnInit {
 
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
       const term = this.searchTermsCategory[i];
-      const type = this.replacementTermsCategory[i] || '[TEXT]';
+      const type = this.categoryFromModel[i] || 'TEXT';
 
-      const searchRegex = new RegExp(this.escapeRegExp(term), 'g');
+      const isSafeToReplaceAnywhere = term.length > 2 || /\W/.test(term);
+      const searchRegex = isSafeToReplaceAnywhere
+        ? new RegExp(this.escapeRegExp(term), 'g')              // match anywhere
+        : new RegExp(`\\b${this.escapeRegExp(term)}\\b`, 'g');  // full-word only
+
       result = result.replace(searchRegex, (match) => {
         const replacement = this.randomizeSpecificContent(type, term);
         this.replacementLog.push({ original: match, replaced: replacement });
@@ -869,9 +928,9 @@ export class MaskingFile implements OnInit {
     this.activePreviewType = 'same';
     this.allRandomizedPreview = [];
 
-    for (let i = 0; i < this.replacementTermsCategory.length; i++) {
+    for (let i = 0; i < this.categoryFromModel.length; i++) {
       const original = this.searchTermsDataRandomized[i];
-      const type = this.replacementTermsCategory[i];
+      const type = this.categoryFromModel[i];
       const randomized = this.randomizeSpecificContent(type, original);
       this.replacementTermsRandomized.push(randomized);
       this.randomizedPreview.push({
@@ -996,7 +1055,7 @@ export class MaskingFile implements OnInit {
       const masked = log.replaced;
       const original = log.original;
       const index = this.searchTermsCategory.findIndex(term => term === original);
-      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
+      const type = this.categoryFromModel[index] || '[UNKNOWN]';
 
 
 
@@ -1028,7 +1087,7 @@ export class MaskingFile implements OnInit {
       const masked = this.replacementLog[i].replaced;
 
       const index = this.searchTermsCategory.findIndex(term => term === ori);
-      const type = this.replacementTermsCategory[index] || '[UNKNOWN]';
+      const type = this.categoryFromModel[index] || '[UNKNOWN]';
 
       mapVal.set(ori, { type, masked }); // biarkan overwrite → ambil latest masking
     }
@@ -1043,14 +1102,17 @@ export class MaskingFile implements OnInit {
   onWordClick(word: string): void {
     const alreadyExists = this.searchTermsUser.includes(word);
     if (!alreadyExists) {
+      const category = this.checkCategoryCount('USER_ADDED', word);
+
       this.searchTermsUser.push(word);
-      this.replacementTermsUser.push('[USER_ADDED]');
+      this.replacementTermsUser.push(category);
 
       // Tambah ke log buat preview table
-      this.replacementLog.push({ original: word, replaced: '[USER_ADDED]' });
+      this.replacementLog.push({ original: word, replaced: category });
 
       this.searchTermsCategory.push(word);
-      this.replacementTermsCategory.push('[USER_ADDED]');
+      this.categoryFromModel.push(category)
+      this.replacementTermsCategory.push(category);
 
       // Add to randomized lists so they are included in those functions
       this.searchTermsAllRandomized.push(word);
@@ -1077,6 +1139,7 @@ export class MaskingFile implements OnInit {
       this.replacementTermsUser.splice(idx, 1);
 
       this.searchTermsCategory.splice(idx, 1);
+      this.categoryFromModel.splice(idx, 1);
       this.replacementTermsCategory.splice(idx, 1);
 
       // Add to randomized lists so they are included in those functions
@@ -1123,7 +1186,7 @@ export class MaskingFile implements OnInit {
     // Create a definitive list of PII to mask, combining AI log and user additions.
     const allPiiToMask = [...this.replacementLog];
     this.replacementLog.forEach(log => {
-      if (log.replaced === '[USER_ADDED]' && !allPiiToMask.some(p => p.original === log.original)) {
+      if (log.replaced.includes('[USER_ADDED') && !allPiiToMask.some(p => p.original === log.original)) {
         allPiiToMask.push(log);
       }
     });
