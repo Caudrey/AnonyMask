@@ -50,8 +50,6 @@ export class MaskingFile implements OnInit {
 
   replacementLog: { original: string; replaced: string }[] = [];
 
-  customUserReplacements: string[] = [];
-
   randomizedPreview: Array<{ ori: string, type: string, result: string }> = [];
 
   allRandomizedPreview: Array<{ ori: string, type: string, result: string }> = [];
@@ -67,25 +65,17 @@ export class MaskingFile implements OnInit {
   clickedPartialButton: string | null = null;
 
   partialMaskedStats: { word: string; count: number; format?: string }[] = [];
-  originalTokensWithDiff: { word: string; changed: boolean }[] = [];
   maskedTokensWithDiff: { word: string; changed: boolean }[] = [];
 
-  isClicked = false;
   clickedButton: string = '';
-  maskingStyle: 'redact' | 'full' | 'partial' = 'redact';
   selectedModel: 'explicit' | 'implicit' = 'explicit';
 
   draggedSelections: string[] = [];
-  highlightedOriginalContent: string = '';
 
   currentSelected: string = '';
   highlightedContent: string = '';
 
   isAdding: boolean = false;
-
-  @ViewChild('originalContentPre', { static: false }) originalContentPre!: ElementRef;
-
-
 
   constructor(private apiService: ApiService) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
@@ -111,11 +101,6 @@ export class MaskingFile implements OnInit {
     this.renderHighlightedContent();
   }
 
-  isUserFormVisible = false;
-
-  toggleUserForm(): void {
-    this.isUserFormVisible = !this.isUserFormVisible;
-  }
 
   onUpload(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -151,6 +136,7 @@ export class MaskingFile implements OnInit {
       reader.onload = () => {
         this.originalContent = reader.result as string;
         this.processOriginalContent();
+        this.renderHighlightedContent();
       };
       reader.readAsText(file);
 
@@ -190,6 +176,7 @@ export class MaskingFile implements OnInit {
         }
         this.originalContent = text;
         this.processOriginalContent();
+        this.renderHighlightedContent();
       };
       reader.readAsArrayBuffer(file);
 
@@ -202,6 +189,7 @@ export class MaskingFile implements OnInit {
         const result = await mammoth.extractRawText({ arrayBuffer: reader.result as ArrayBuffer });
         this.originalContent = result.value.replace(/\n\n/g, '\n');
         this.processOriginalContent();
+        this.renderHighlightedContent();
       };
 
       reader.readAsArrayBuffer(file);
@@ -248,6 +236,7 @@ export class MaskingFile implements OnInit {
 
         this.originalContent = result;
         this.processOriginalContent();
+        this.renderHighlightedContent();
       };
       reader.readAsArrayBuffer(file);
 
@@ -280,8 +269,7 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
-    this.partialMaskedStats = [];
-    this.originalTokensWithDiff = [];
+    // this.partialMaskedStats = [];
     this.maskedTokensWithDiff = [];
 
     this.clearTermAndReplacement();
@@ -498,35 +486,6 @@ export class MaskingFile implements OnInit {
 
     // Re-apply the 'Value' masking immediately to reflect the changes in the main view
     this.userMasking();
-  }
-
-  getDiffLines(): { line: string; changed: boolean }[] {
-    const originalLines = this.originalContent.split('\n');
-    const maskedLines = this.maskedContent.split('\n');
-    return originalLines.map((line, idx) => ({
-      line: maskedLines[idx] || '',
-      changed: line !== maskedLines[idx]
-    }));
-  }
-
-  getDiffLines2(): { original: string; masked: string; changed: boolean }[] {
-    const originalLines = this.originalContent.split('\n');
-    const maskedLines = this.maskedContent.split('\n');
-
-    const maxLength = Math.max(originalLines.length, maskedLines.length);
-    const result = [];
-
-    for (let i = 0; i < maxLength; i++) {
-      const original = originalLines[i] || '';
-      const masked = maskedLines[i] || '';
-      result.push({
-        original,
-        masked,
-        changed: original !== masked
-      });
-    }
-
-    return result;
   }
 
   onDownload(): void {
@@ -915,11 +874,8 @@ export class MaskingFile implements OnInit {
     console.log("🔍 All Replacement Log:", this.replacementLog);
     this.replacementLog.forEach(log =>
       console.log(`original: ${log.original} | replaced: ${log.replaced}`)
-  );
-
-  // this.isPostMaskingOptionsVisible = true;
+    );
   }
-
 
   sameDataRandomized(): void {
     this.replacementTermsRandomized = [];
@@ -951,7 +907,6 @@ export class MaskingFile implements OnInit {
     );
   }
 
-  isCategoryTableVisible = false;
   labelCategoryTable: Array<{ category: string, text: string, count: number }> = [];
 
   labelCategory(): void {
@@ -961,7 +916,6 @@ export class MaskingFile implements OnInit {
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
 
-    this.isCategoryTableVisible = true;
     this.applyLabelCategoryReplacement();
 
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
@@ -988,15 +942,6 @@ export class MaskingFile implements OnInit {
       }
     });
 
-    this.labelCategoryTable = Array.from(categoryMap.entries()).map(([key, val]) => {
-      const [category, text] = key.split('||');
-      return {
-        category,
-        text,
-        count: val.count
-      };
-    });
-
   }
 
   applyLabelCategoryReplacement(): void {
@@ -1016,33 +961,6 @@ export class MaskingFile implements OnInit {
     );
 
     this.generateDiffTokens();
-  }
-
-
-  applyMaskingStyle(): void {
-    const applyMask = (word: string): string => {
-      switch (this.maskingStyle) {
-        case 'redact': return '[REDACTED]';
-        case 'full': return '*'.repeat(word.length);
-        case 'partial':
-          const visible = Math.ceil(word.length * 0.3);
-          return word.slice(0, visible) + '*'.repeat(word.length - visible);
-        default: return word;
-      }
-    };
-
-    // this.replacementLog = this.replacementLog.map(log => {
-    //   if (this.excludedWords.includes(log.original)) return log; // skip if excluded
-    //   return { original: log.original, replaced: applyMask(log.original) };
-    // });
-    // Ulangi masking dengan style baru
-    this.maskedContent = this.replaceFromArray(
-      this.originalContent,
-      this.replacementLog.map(l => l.original),
-      this.replacementLog.map(l => l.replaced)
-    );
-
-    console.log(`🎭 Applied style '${this.maskingStyle}'`);
   }
 
   generatePreviewTables(): void {
@@ -1173,7 +1091,7 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
-    this.partialMaskedStats = [];
+    // this.partialMaskedStats = [];
   }
 
   selectMaskType(type: 'partial' | 'full') {
@@ -1181,6 +1099,11 @@ export class MaskingFile implements OnInit {
   }
 
   handlePartialClick(type: 'redact' | 'prefix-suffix') {
+
+  console.log('[DEBUG] handlePartialClick called with:', type); // ⬅️ debug log
+  console.log('[DEBUG] selectedMaskType', this.selectedMaskType);
+
+
     this.clickedPartialButton = type;
 
     // Create a definitive list of PII to mask, combining AI log and user additions.
@@ -1197,7 +1120,7 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
 
     const piiToNewMaskMap = new Map<string, string>();
-    const usedMasks = new Map<string, string>(); // Key: mask, Value: original word
+    const usedMasks = new Map<string, string>();
 
     allPiiToMask.forEach(logEntry => {
         const originalPii = logEntry.original;
@@ -1275,33 +1198,11 @@ export class MaskingFile implements OnInit {
     this.generatePreviewTables();
     this.generateDiffTokens();
 
-    // const originalWords = this.originalContent.trim().split(/\s+/);
-    // const maskedWords = this.maskedContent.trim().split(/\s+/);
-    // const stats: Record<string, { count: number; format?: string }> = {};
+    console.log("Replacement log:", this.replacementLog);
+    console.log("Partial stats:", this.partialMaskedStats);
 
-    // for (let i = 0; i < Math.min(originalWords.length, maskedWords.length); i++) {
-    //   if (originalWords[i] !== maskedWords[i]) {
-    //     const word = maskedWords[i];
 
-    //     if (!stats[word]) {
-    //       stats[word] = { count: 0 };
-    //     }
 
-    //     stats[word].count += 1;
-
-    //     if (type === 'prefix-suffix') {
-    //       const prefix = word.slice(0, 2);
-    //       const suffix = word.slice(-2);
-    //       stats[word].format = `${prefix}...${suffix}`;
-    //     }
-    //   }
-    // }
-
-    // this.partialMaskedStats = Object.entries(stats).map(([word, info]) => ({
-    //   word,
-    //   count: info.count,
-    //   format: info.format,
-    // }));
   }
 
   onMaskedValueChange(original: string, newMasked: string): void {
@@ -1341,7 +1242,7 @@ export class MaskingFile implements OnInit {
   //       changed: targets.includes(word.trim())
   //     }));
 
-    this.originalTokensWithDiff = splitTokens(this.originalContent);
+    // this.originalTokensWithDiff = splitTokens(this.originalContent);
     this.maskedTokensWithDiff = splitTokens(this.maskedContent);
   }
 
@@ -1365,11 +1266,11 @@ export class MaskingFile implements OnInit {
     });
 
     const downloadFileName = this.fileName.replace(/\.[^/.]+$/, '') + '_masking_log.json';
-    this.triggerDownload(blob, downloadFileName);
-  }
+      this.triggerDownload(blob, downloadFileName);
+    }
 
     getHighlightedHTML(content: string, selections: string[]): string {
-  let highlighted = content;
+    let highlighted = content;
 
   selections.forEach(sel => {
     // Escape special regex characters
@@ -1397,22 +1298,11 @@ export class MaskingFile implements OnInit {
       this.draggedSelections.push(selectedText);
     }
 
-    this.highlightedOriginalContent = this.getHighlightedHTML(this.originalContent, this.draggedSelections);
-
     this.onWordClick(selectedText);
     this.generatePreviewTables();
     selection?.removeAllRanges();
   }
 
-
-
-  confirmCurrentSelection(): void {
-    if (this.currentSelected && !this.searchTermsUser.includes(this.currentSelected)) {
-      this.searchTermsUser.push(this.currentSelected);
-      this.currentSelected = '';
-      this.renderHighlightedContent();
-    }
-  }
 
   renderHighlightedContent(): void {
     let html = this.originalContent;
@@ -1432,26 +1322,13 @@ export class MaskingFile implements OnInit {
     this.highlightedContent = html.replace(/\n/g, '<br>');
   }
 
-    onSelectionBound!: () => void;
-
-
   startAdding() {
     this.isAdding = true;
-    const pre = this.originalContentPre?.nativeElement;
-    if (pre) {
-      pre.addEventListener('mouseup', this.onSelectionBound);
-    }
   }
 
   doneAdding() {
     this.isAdding = false;
-    const pre = this.originalContentPre?.nativeElement;
-    if (pre) {
-      pre.removeEventListener('mouseup', this.onSelectionBound);
-    }
     this.draggedSelections = [];
   }
-
-
 
 }
