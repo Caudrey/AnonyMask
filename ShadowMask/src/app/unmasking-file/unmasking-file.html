@@ -96,19 +96,11 @@
   <div class="grid-cols preview-row">
     <div>
       <h4>🧩 Processed File</h4>
-      <div class="text-preview">
-        <ng-container *ngFor="let token of processedTokensWithDiff">
-          <span [ngClass]="{ 'highlight-original': token.changed }">{{ token.word }}</span>&nbsp;
-        </ng-container>
-      </div>
+      <div class="text-preview" [innerHTML]="processedHighlightedContent"></div>
     </div>
     <div>
       <h4>🔓 Unmasked Result</h4>
-      <div class="text-preview">
-        <ng-container *ngFor="let token of resultTokensWithDiff">
-          <span [ngClass]="{ 'highlight-masked': token.changed }">{{ token.word }}</span>&nbsp;
-        </ng-container>
-      </div>
+      <div class="text-preview" [innerHTML]="resultHighlightedContent"></div>
     </div>
   </div>
   </div>

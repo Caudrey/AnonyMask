@@ -39,6 +39,11 @@ export class UnmaskingFile {
 
   resultContent: string = '';
 
+  resultHighlightedContent: string = '';
+  processedHighlightedContent: string = '';
+
+  // highlightedContent: string = '';
+
   constructor() {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
       'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -93,14 +98,6 @@ export class UnmaskingFile {
     const fileType = file.type;
     const reader = new FileReader();
     let content = '';
-    // if (this.originalFileName && this.maskedFileName && this.processedMaskedFileName) {
-    //   this.fileReady = true;
-    //   this.isGenerating = true;
-    //   setTimeout(() => {
-    //     this.resultContent = 'Unmasked file content based on uploaded files...';
-    //     this.isGenerating = false;
-    //   }, 2000); // simulate processing
-    // }
 
     // TXT
     if (fileType === supportedTypes[0]) {
@@ -185,14 +182,6 @@ export class UnmaskingFile {
           result += '\n';
         });
 
-        // let result = '';
-        // workbook.SheetNames.forEach(sheetName => {
-        //   const worksheet = workbook.Sheets[sheetName];
-        //   const sheetData = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
-        //   const viewDataExcel = XLSX.utils.sheet_to_txt(worksheet); // or .sheet_to_txt
-        //   result += `Sheet: ${sheetName}\n${sheetData}\n\n`;
-        // });
-
         content = result;
         this.processContent(fileName, type, content);
       };
@@ -203,94 +192,12 @@ export class UnmaskingFile {
   }
 
   processContent(fileName: string, type: string, content: string): void {
-    // if (type === 'original') {
-    //   this.originalFileName = fileName;
-    //   this.originalText = content;
-    //   this.originalContent = content;
-    // }
-
-    // if (type === 'masked') {
-    //   this.maskedFileName = fileName;
-    //   this.maskedText = content;
-    //   this.maskedContent = content;
-    // }
-
     if (type === 'processed') {
       this.processedMaskedFileName = fileName;
       this.processedFileRawName = fileName;
       this.processedText = content;
     }
     this.processUnmasking();
-    // if (this.originalText && this.maskedText && this.processedText) {
-    //   this.fileReady = true;
-    //   this.isGenerating = true;
-
-    //   setTimeout(() => {
-    //     const originalTokens = this.originalText.trim().split(/\s+/);
-    //     const maskedTokens = this.maskedText.trim().split(/\s+/);
-    //     const processedTokens = this.processedText.trim().split(/\s+/);
-
-    //     const mapping: { masked: string; original: string }[] = [];
-    //     for (let i = 0; i < Math.min(originalTokens.length, maskedTokens.length); i++) {
-    //       if (originalTokens[i] !== maskedTokens[i]) {
-    //         mapping.push({ masked: maskedTokens[i], original: originalTokens[i] });
-    //       }
-    //     }
-
-    //     const mappingUsed: { [key: number]: boolean } = {};
-    //     const resultTokens = processedTokens.map(token => {
-    //       const matchIndex = mapping.findIndex(
-    //         (pair, idx) => pair.masked === token && !mappingUsed[idx]
-    //       );
-    //       if (matchIndex !== -1) {
-    //         mappingUsed[matchIndex] = true;
-    //         return mapping[matchIndex].original;
-    //       }
-    //       return token;
-    //     });
-
-    //     this.maskedMapping = mapping.map(pair => ({
-    //       original: pair.original,
-    //       masked: pair.masked
-    //     }));
-
-    //     this.unmaskedResult = resultTokens.join(' ');
-    //     this.resultContent = this.unmaskedResult;
-    //     this.isGenerating = false;
-
-    //     const originalWords = this.originalText.trim().split(/\s+/);
-    //     const maskedWords = this.maskedText.trim().split(/\s+/);
-
-    //     this.originalTokensWithDiff = [];
-    //     this.maskedTokensWithDiff = [];
-
-    //     const len = Math.max(originalWords.length, maskedWords.length);
-
-    //     for (let i = 0; i < len; i++) {
-    //       const oWord = originalWords[i] || '';
-    //       const mWord = maskedWords[i] || '';
-    //       const changed = oWord !== mWord;
-
-    //       this.originalTokensWithDiff.push({ word: oWord, changed });
-    //       this.maskedTokensWithDiff.push({ word: mWord, changed });
-    //     }
-
-    //     const resultWords = this.unmaskedResult.trim().split(/\s+/);
-    //     this.processedTokensWithDiff = [];
-    //     this.resultTokensWithDiff = [];
-
-    //     const len2 = Math.max(processedTokens.length, resultWords.length);
-    //     for (let i = 0; i < len2; i++) {
-    //       const pWord = processedTokens[i] || '';
-    //       const rWord = resultWords[i] || '';
-    //       const changed = pWord !== rWord;
-
-    //       this.processedTokensWithDiff.push({ word: pWord, changed });
-    //       this.resultTokensWithDiff.push({ word: rWord, changed });
-    //     }
-
-    //   }, 500);
-    // }
   };
 
   onDownload(): void {
@@ -497,26 +404,49 @@ export class UnmaskingFile {
       this.unmaskedResult = unmasked;
       this.resultContent = this.unmaskedResult;
 
-      // Optional: highlight changes
-      const processedTokens = this.processedText.trim().split(/\s+/);
-      const resultTokens = this.unmaskedResult.trim().split(/\s+/);
+      const processedTokens = this.processedText.split(/(\s+|\n)/).filter(t => t.length);
+      const resultTokens = this.unmaskedResult.split(/(\s+|\n)/).filter(t => t.length);
 
       this.processedTokensWithDiff = [];
       this.resultTokensWithDiff = [];
 
       const len = Math.max(processedTokens.length, resultTokens.length);
-      for (let i = 0; i < len; i++) {
-        const pWord = processedTokens[i] || '';
+      for (let i = 0; i < processedTokens.length; i++) {
+        const pWord = processedTokens[i];
         const rWord = resultTokens[i] || '';
-        const changed = pWord !== rWord;
+
+        const isWhitespace = /^\s+$/.test(pWord);
+        const changed = isWhitespace ? false : pWord !== rWord;
 
         this.processedTokensWithDiff.push({ word: pWord, changed });
         this.resultTokensWithDiff.push({ word: rWord, changed });
       }
+
+      this.processedHighlightedContent = this.generateHighlightedContent(this.processedText, this.maskedMapping);
+      this.resultHighlightedContent = this.generateHighlightedContent(this.unmaskedResult, this.maskedMapping);
 
       this.fileReady = true;
       this.isGenerating = false;
     }, 300);
   }
 
+  generateHighlightedContent(content: string, mapping: { original: string, masked: string }[]): string {
+    let result = content;
+
+    mapping.forEach(({ original, masked }) => {
+      // Escape both original & masked
+      const escapedMasked = masked.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const escapedOriginal = original.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+      const maskedRegex = new RegExp(`\\b${escapedMasked}\\b`, 'g');
+      const originalRegex = new RegExp(`\\b${escapedOriginal}\\b`, 'g');
+
+      // Ganti yang ketemu di konten — entah masked atau original
+      result = result
+        .replace(maskedRegex, `<mark class="highlight">${masked}</mark>`)
+        .replace(originalRegex, `<mark class="highlight">${original}</mark>`);
+    });
+
+    return result.replace(/\n/g, '<br>');
+  }
 }

@@ -101,6 +101,7 @@
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+
 }
 
 .preview-title {
@@ -127,12 +128,30 @@
 }
 
 .text-preview {
-    border: 1px solid #ccc;
-    padding: 1rem;
-    user-select: text;
-    white-space: pre-wrap;
-    background: #fdfdfd;
-    min-height: 120px;
+  user-select: text;
+  font-family: monospace;
+  line-height: 1.5;
+  word-wrap: break-word;
+  font-family: monospace;
+  overflow-wrap: anywhere;
+  background: #f9f9f9;
+  padding: 1rem;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  height:auto;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.preview-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.preview-row > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .highlight-original {
