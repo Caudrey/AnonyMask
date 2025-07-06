@@ -396,9 +396,19 @@ export class UnmaskingFile {
 
       // Replace full masked phrases (case sensitive exact match)
       this.maskedMapping.forEach(pair => {
-        const escapedMasked = pair.masked.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex
-        const regex = new RegExp(`\\b${escapedMasked}\\b`, 'g'); // word-boundary match
-        unmasked = unmasked.replace(regex, pair.original);
+        const masked = pair.masked;
+        const original = pair.original;
+
+        const escapedMasked = masked.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // escape regex
+
+        // If masked word is long or contains brackets/symbols, allow in-word replacement
+        const isSafeToReplaceAnywhere = masked.length > 2 || /\W/.test(masked); // non-word character like [ ] or special chars
+
+        const regex = isSafeToReplaceAnywhere
+          ? new RegExp(escapedMasked, 'g')                       // replace anywhere
+          : new RegExp(`\\b${escapedMasked}\\b`, 'g');           // word boundary only for short masked word
+
+        unmasked = unmasked.replace(regex, original);
       });
 
       this.unmaskedResult = unmasked;
