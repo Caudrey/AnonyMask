@@ -237,7 +237,7 @@
         <div class="title-original-file">
           <h4>🛡️ Masked Output</h4>
         </div>
-        <div class="text-box masked" [innerHTML]="highlightedContent"></div>
+        <div class="text-box masked" [innerHTML]="highlightedMaskedContent"></div>
         <!-- <div class="text-box masked">
           {{ maskedContent }}
         </div> -->
@@ -440,13 +440,13 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of valueOnlyTable; let i = index">
+      <tr *ngFor="let row of allRandomizedPreview; let i = index">
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
         <td>
           <input
-            [(ngModel)]="row.masked"
-            (blur)="onMaskedValueChange(row.ori, row.masked)"
+            [(ngModel)]="row.result"
+            (blur)="onMaskedValueChange(row.ori, row.result)"
             class="masked-input" />
         </td>
       <td>
@@ -508,85 +508,52 @@
 
   <!-- TABEL PREVIEW UNTUK PARTIAL MASKING -->
   <div
-    *ngIf="selectedMaskType === 'partial' && clickedPartialButton && partialMaskedStats.length > 0"
+    *ngIf="selectedMaskType === 'partial' && clickedPartialButton === 'prefix-suffix' && partialMaskedStats.length > 0"
     class="mapping-table-box"
   >
-    <h4 class="preview-title">🧪 Preview for Partial Masking ({{ clickedPartialButton.toUpperCase() }})</h4>
+    <h4 class="preview-title">🧪 Preview for Partial Masking</h4>
     <table class="mapping-table">
       <thead>
         <tr>
           <th>🔤 Original Text</th>
-          <th *ngIf="clickedPartialButton === 'prefix-suffix'">🔧 Masked Text </th>
+          <th>🔧 Masked Text </th>
           <th>🔢 Count</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of partialMaskedStats">
           <td>{{ item.word }}</td>
-          <td *ngIf="clickedPartialButton === 'prefix-suffix'">{{ item.format }}</td>
+          <td>{{ item.format }}</td>
           <td>{{ item.count }}</td>
         </tr>
       </tbody>
     </table>
   </div>
 
-  <!-- TABEL PREVIEW UNTUK PARTIAL MASKING -->
-  <!-- <div
-    *ngIf="selectedMaskType === 'partial' && clickedPartialButton && partialMaskedStats.length > 0"
-    class="mapping-table-box"
-  >
-    <h4 class="preview-title">
-      🧪 Preview for Partial Masking ({{ clickedPartialButton.toUpperCase() }})
-    </h4>
-
-    <table class="mapping-table">
-      <thead>
-        <tr>
-          <th>🔤 Original Text</th>
-          <th>🔧 Masked Text</th>
-          <th>🔢 Count</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of partialMaskedStats">
-          <td>{{ item.word }}</td>
-          <td>
-            {{
-              clickedPartialButton === 'prefix-suffix'
-                ? item.format
-                : '*'.repeat(item.word.length)
-            }}
-          </td>
-          <td>{{ item.count }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div> -->
-
 
     <!-- TABEL PREVIEW UNTUK REDACT MASKING -->
-  <!-- <div
-    *ngIf="selectedMaskType === 'partial' && clickedPartialButton && partialMaskedStats.length > 0"
+  <div
+    *ngIf="selectedMaskType === 'partial' && clickedPartialButton  === 'redact' && partialMaskedStats.length > 0"
     class="mapping-table-box"
   >
-    <h4 class="preview-title">🧪 Preview for Partial Masking ({{ clickedPartialButton.toUpperCase() }})</h4>
+    <h4 class="preview-title">🧪 Preview for Partial Masking</h4>
     <table class="mapping-table">
       <thead>
         <tr>
           <th>🔤 Original Text</th>
-          <th *ngIf="clickedPartialButton === 'redact'">🔧 Masked Text </th>
+          <th>🔧 Masked Text </th>
           <th>🔢 Count</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of partialMaskedStats">
           <td>{{ item.word }}</td>
-          <td *ngIf="clickedPartialButton === 'redact'">{{ item.format }}</td>
+          <td>{{ item.format }}</td>
           <td>{{ item.count }}</td>
         </tr>
       </tbody>
     </table>
-  </div> -->
+  </div>
 
 
 </div>

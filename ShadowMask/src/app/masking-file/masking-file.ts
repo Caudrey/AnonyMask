@@ -77,6 +77,8 @@ export class MaskingFile implements OnInit {
 
   isAdding: boolean = false;
 
+  highlightedMaskedContent: string = '';
+
   constructor(private apiService: ApiService) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
       'pdfjs-dist/build/pdf.worker.min.mjs',
@@ -98,6 +100,8 @@ export class MaskingFile implements OnInit {
     // this.generatePreviewTables();
     // this.generateDiffTokens();
     // this.fileReady = true;
+
+    this.generateHighlightedMaskedContent();
     this.renderHighlightedContent();
   }
 
@@ -269,8 +273,10 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
+    this.clickedPartialButton = null;
     // this.partialMaskedStats = [];
     this.maskedTokensWithDiff = [];
+    this.replacementLog = [];
 
     this.clearTermAndReplacement();
 
@@ -302,6 +308,7 @@ export class MaskingFile implements OnInit {
             this.generateDiffTokens();
             this.generatePreviewTables();
             this.addPredictionsToSearchLists(this.replacementLog);
+            this.generateHighlightedMaskedContent();
             console.log("Haii" + this.categoryOnlyTable)
             this.fileReady = true;
             this.isGenerating = false;
@@ -863,7 +870,14 @@ export class MaskingFile implements OnInit {
       result = result.replace(searchRegex, (match) => {
         const replacement = this.randomizeSpecificContent(type, term);
         this.replacementLog.push({ original: match, replaced: replacement });
-        return replacement;
+
+        this.allRandomizedPreview.push({
+          ori: match,
+          type: type,
+          result: replacement
+        });
+
+      return replacement;
       });
     }
 
@@ -1091,7 +1105,7 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
-    // this.partialMaskedStats = [];
+    this.partialMaskedStats = [];
   }
 
   selectMaskType(type: 'partial' | 'full') {
@@ -1187,6 +1201,7 @@ export class MaskingFile implements OnInit {
     });
 
     this.maskedContent = finalMaskedContent;
+    this.generateHighlightedMaskedContent();
 
     this.partialMaskedStats = Object.entries(stats).map(([word, info]) => ({
         word,
@@ -1224,6 +1239,7 @@ export class MaskingFile implements OnInit {
 
     this.generatePreviewTables();
     this.generateDiffTokens();
+    this.generateHighlightedMaskedContent();
   }
 
   generateDiffTokens(): void {
@@ -1331,4 +1347,18 @@ export class MaskingFile implements OnInit {
     this.draggedSelections = [];
   }
 
+  private generateHighlightedMaskedContent(): void {
+    let tempHighlightedContent = this.maskedContent;
+    const maskedValuesToHighlight = new Set(this.replacementLog.map(log => log.replaced));
+
+    maskedValuesToHighlight.forEach(maskedWord => {
+        const safeMaskedWord = maskedWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(`(?<!<mark[^>]*>)(?<=\\b)(${safeMaskedWord})(?!<\\/mark)(?=\\b)`, 'g');
+
+        tempHighlightedContent = tempHighlightedContent.replace(regex, `<mark class="highlight-masked">$1</mark>`);
+    });
+
+    this.highlightedMaskedContent = tempHighlightedContent.replace(/\n/g, '<br>');
+    console.log("Generated highlightedMaskedContent:", this.highlightedMaskedContent);
+}
 }
