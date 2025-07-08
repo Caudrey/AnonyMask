@@ -27,7 +27,7 @@ Despite regulations such as <b>GDPR</b> and <b>UU PDP</b> in Indonesia, many use
 | 5.  | **Customizable Masking Rules**     | Allows users to define which entities to mask or exclude, offering **full control over the masking process**. |
 | 6.  | **Privacy By Design**              | All processing is performed **offline and locally**—no data is sent or stored externally, ensuring full confidentiality. |
 | 7.  | **Transparent Logging**            | Maintains **logs of all masking and unmasking operations** for traceability and auditability. |
-| 8.  | **Multilingual Model Support**     | Automatically detects privacy data in **english and Indonesia** using models like XLM-RoBERTa and paraphrase-multilingual-mpnet-base-v2. |
+| 8.  | **Multilingual Model Support**     | Automatically detects privacy data in **multiple language** such as English and Indonesia, using models like XLM-RoBERTa. |
 | 9.  | **Portable Desktop Application**   | Runs as a **standalone `.exe`** without requiring external dependencies on the user’s machine. |
 
 ## 🧾 Your Privacy, Your Rules
