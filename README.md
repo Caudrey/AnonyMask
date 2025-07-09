@@ -25,7 +25,7 @@ Despite regulations such as <b>GDPR</b> and <b>UU PDP</b> in Indonesia, many use
 
 | No. | Main Features                     | Description |
 |:---:|:----------------------------|:------------|
-| 1.  | **Automatic Privacy Data Masking** | Detects and masks both **explicit** and **implicit ([33 labels](https://github.com/Caudrey/AnonyMask/AnonyMaskLabels.txt))** privacy data using transformer-based AI models. |
+| 1.  | **Automatic Privacy Data Masking** | Detects and masks both **explicit** and **implicit ([33 labels](https://github.com/Caudrey/AnonyMask/blob/main/AnonyMaskLabels.txt))** privacy data using transformer-based AI models. |
 | 2.  | **Multi-File Format Support**      | Supports input and output in **`.txt`, `.csv`, `.pdf`, `.docx`, `.xlsx`, and `.xls`** formats. |
 | 3.  | **Secure LLM/RAG Integration**         | Prepares **privacy-safe documents**, ensuring no raw PII is exposed to external LLM or RAG. |
 | 4.  | **Smart Unmasking**                | **Restores original content** after LLM or RAG processing using internal token mapping—seamlessly reversing the masked values. |
@@ -78,7 +78,7 @@ cargo install tauri-cli
 ### 🔧 Production Mode
 1. **Download the `.exe` installer** from the link below.
     
-    [AnonyMask Exe](https://github.com/Caudrey/AnonyMask/ShadowMask/src-tauri/target/release/bundle/nsis/)
+    [AnonyMask Exe](https://github.com/Caudrey/AnonyMask/blob/main/ShadowMask/src-tauri/target/release/bundle/nsis/shadow-mask_0.1.0_x64-setup_shadowMaskFinal.exe)
 
 2. **Run the installer** – it will automatically set up everything you need.
 3.  **Run AnonyMask** — the app will:
