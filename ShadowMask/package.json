@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "backend": "cd python-backend && pip install -r requirements.txt && uvicorn main:app --host 127.0.0.1 --port 8000 --reload",
@@ -19,6 +19,7 @@
     "@angular/platform-browser": "^20.0.0",
     "@angular/router": "^20.0.0",
     "@tauri-apps/api": "^2.5.0",
+    "buffer": "^6.0.3",
     "docx": "^9.5.1",
     "jspdf": "^3.0.1",
     "mammoth": "^1.9.1",

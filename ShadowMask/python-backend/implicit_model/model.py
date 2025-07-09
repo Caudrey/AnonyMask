@@ -90,12 +90,24 @@ import torch
 from setfit import SetFitModel
 import regex as re
 import json
+import sys
+import os
+from pathlib import Path
 
 # --- 1. CONFIGURATION ---
 
 # IMPORTANT: Update this path to point to your saved SetFit model folder
 # e.g., "/kaggle/working/multilingual_implicit_sentence_model_20250705_123456"
-IMPLICIT_MODEL_PATH = "./implicit_model"
+
+# For PyInstaller compatibility
+BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+
+# If running from PyInstaller, add subfolder
+if hasattr(sys, '_MEIPASS'):
+    IMPLICIT_MODEL_PATH = str(BASE_DIR / "implicit_model")
+else:
+    # In dev mode, the script is already inside explicit_model/
+    IMPLICIT_MODEL_PATH = str(BASE_DIR)
 
 # This list must be loaded from your training script or be identical to mlb.classes_
 # to ensure the mapping from prediction index to label name is correct.
@@ -108,6 +120,7 @@ IMPLICIT_LABELS = [
 # --- 2. MODEL LOADING ---
 
 print("Loading implicit classification model...")
+print("Full path of this file:", os.path.abspath(__file__))
 device = "cuda" if torch.cuda.is_available() else "cpu"
 try:
     implicit_model = SetFitModel.from_pretrained(IMPLICIT_MODEL_PATH).to(device)
@@ -178,7 +191,7 @@ def predict_implicit_pii(text: str):
                 "start": sentence_info['start'],
                 "end": sentence_info['end']
             })
-    
+
     return results
 
 test_text = """
