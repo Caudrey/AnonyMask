@@ -361,7 +361,7 @@ export class MaskingFile implements OnInit {
           map(response => {
             const predictions = response.predictions;
 
-            this.replacementLog = [];
+            // this.replacementLog = [];
 
             if (!predictions) {
               return content; // Return original content if there are no predictions
@@ -404,7 +404,7 @@ export class MaskingFile implements OnInit {
         map(response => {
             // The API now returns a list of objects with sentence, topics, start, and end
             const predictions = response.predictions;
-            this.replacementLog = [];
+            // this.replacementLog = [];
 
             // This handles cases where the API returns {} or an empty list [].
             if (!predictions || !Array.isArray(predictions) || predictions.length === 0) {
@@ -668,24 +668,59 @@ export class MaskingFile implements OnInit {
 
   // user masking
   userMasking(): void {
-    this.replacementLog = []; // reset log
-    this.activePreviewType = 'value';
+     this.activePreviewType = 'value';
+    // this.replacementLog = []; // Pastikan log di-reset untuk mode ini
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
+    this.partialMaskedStats = [];
 
-    this.maskedContent = this.replaceFromArray(
-      this.originalContent,
-      this.searchTermsUser,
-      this.replacementTermsUser
-    );
+    let currentMaskedContent = this.originalContent;
 
+    const allTermsAndReplacements = new Map<string, string>();
+
+
+    // Tambahkan PII dari deteksi AI
+    this.searchTermsCategory.forEach((term, idx) => {
+      allTermsAndReplacements.set(term, this.replacementTermsCategory[idx]);
+    });
+
+    // Tambahkan PII dari user. Ini akan menimpa PII dari AI jika ada duplikasi,
+    // atau menambahkan PII baru.
+    this.searchTermsUser.forEach((term, idx) => {
+      allTermsAndReplacements.set(term, this.replacementTermsUser[idx]);
+    });
+
+    // Iterasi melalui semua istilah PII dan terapkan masking
+    allTermsAndReplacements.forEach((replacement, term) => {
+    const escapedTerm = this.escapeRegExp(term);
+    // Gunakan word boundary kecuali untuk PII yang mungkin berisi spasi atau karakter khusus
+    const isWordBoundaryNeeded = !/\s|[!@#$%^&*()_+{}\[\]:;<>,.?~\\/-]/.test(term);
+    const regex = isWordBoundaryNeeded
+      ? new RegExp(`\\b${escapedTerm}\\b`, 'g')
+      : new RegExp(escapedTerm, 'g');
+
+      currentMaskedContent = currentMaskedContent.replace(regex, (match) => {
+        // Pastikan untuk hanya menambahkan ke log jika belum ada, atau update jika sudah ada
+        const existingLogEntry = this.replacementLog.find(log => log.original === match);
+        if (existingLogEntry) {
+            existingLogEntry.replaced = replacement;
+        } else {
+            this.replacementLog.push({ original: match, replaced: replacement });
+        }
+        return replacement;
+      });
+    });
+
+    this.maskedContent = currentMaskedContent;
     this.generatePreviewTables();
     this.generateDiffTokens();
+    this.generateHighlightedMaskedContent(); // Pastikan konten ber-highlight juga diperbarui
+    console.log('User Masking Log:', this.replacementLog);
   }
 
   replaceFromArray(content: string, searchTerms: string[], replacementTerms: string[]): string {
     let result = content;
-    this.replacementLog = []; // Clear previous log
+    // this.replacementLog = []; // Clear previous log
 
     for (let i = 0; i < searchTerms.length; i++) {
       const search = searchTerms[i];
@@ -892,6 +927,7 @@ const searchRegex = isSafeToReplaceAnywhere
     this.maskedContent = result;
     this.generatePreviewTables();
     this.generateDiffTokens();
+    this.generateHighlightedMaskedContent();
 
     console.log("🔍 All Replacement Log:", this.replacementLog);
     this.replacementLog.forEach(log =>
@@ -935,7 +971,7 @@ const searchRegex = isSafeToReplaceAnywhere
   labelCategoryTable: Array<{ category: string, text: string, count: number }> = [];
 
   labelCategory(): void {
-    this.replacementLog = [];
+    // this.replacementLog = [];
 
     this.activePreviewType = 'category';
     this.randomizedPreview = [];
@@ -955,6 +991,7 @@ const searchRegex = isSafeToReplaceAnywhere
 
       this.generatePreviewTables();
       this.generateDiffTokens();
+      this.generateHighlightedMaskedContent();
     }
 
     const categoryMap = new Map<string, { text: string, count: number }>();
@@ -970,7 +1007,7 @@ const searchRegex = isSafeToReplaceAnywhere
   }
 
   applyLabelCategoryReplacement(): void {
-    this.replacementLog = [];
+    // this.replacementLog = [];
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
 
@@ -1141,7 +1178,7 @@ const searchRegex = isSafeToReplaceAnywhere
       }
     });
 
-    this.replacementLog = [];
+    // this.replacementLog = [];
     this.activePreviewType = null;
     this.categoryOnlyTable = [];
     this.valueOnlyTable = [];
