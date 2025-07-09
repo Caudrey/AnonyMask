@@ -1,9 +1,8 @@
 torch
 numpy
-setfit
+scikit-learn
 fastapi
 uvicorn
 transformers
-sentence-transformers
 regex
 
