@@ -1,0 +1,18 @@
+{
+  "fileName": "Costumer Support Request_implicit.txt",
+  "modelUsed": "implicit",
+  "mapping": [
+    {
+      "original": "I’m planning to buy a car under 300 million IDR, and I’ve been setting aside part of my monthly income for the down payment and installments",
+      "masked": "[Asset]"
+    },
+    {
+      "original": "I’m also saving around 4 million per month for a two-week trip to Europe next year, targeting a 50 million budget",
+      "masked": "[Salary]"
+    },
+    {
+      "original": "Septian",
+      "masked": "[Nickname]"
+    }
+  ]
+}
