@@ -302,7 +302,7 @@ export class MaskingFile implements OnInit {
             // This code runs ONLY after the API call is successful
             console.log("API call successful, result received!");
             this.maskedContent = resultString;
-
+            console.log(resultString)
 
             // The replacementLog is now set by the API response, so we can generate tables
             this.generateDiffTokens();
@@ -396,7 +396,11 @@ export class MaskingFile implements OnInit {
       return this.apiService.getPredictionsImplicit(content).pipe(
         map(response => {
             // The API now returns a list of objects with sentence, topics, start, and end
-            const predictions = response.predictions;
+            const predictions: any[] = response.predictions;
+
+            console.log("Received predictions from backend:", predictions);
+
+            console.log(response.predictions)
             this.replacementLog = [];
 
             // This handles cases where the API returns {} or an empty list [].
@@ -410,18 +414,38 @@ export class MaskingFile implements OnInit {
             let maskedCont = content;
 
             // 4. Loop through the predictions and replace the original sentence with a mask
-            sortedPredictions.forEach((prediction: { sentence: string, predicted_topics: string[], start: number, end: number }) => {
-                const topics = prediction.predicted_topics.join(', ');
-                const category = topics;
-                this.categoryFromModel.push(category);
-                const replacement = this.checkCategoryCount(category, prediction.sentence);
-                console.log("replace: " + prediction.sentence + " , " + replacement);
+            // sortedPredictions.forEach((prediction: { sentence: string, predicted_topics: string[], start: number, end: number }) => {
+            //     const topics = prediction.predicted_topics.join(', ');
+            //     const category = topics;
+            //     this.categoryFromModel.push(category);
+            //     const replacement = this.checkCategoryCount(category, prediction.sentence);
+            //     console.log("replace: " + prediction.sentence + " , " + replacement);
 
-                // Replace the content from start to end with the new mask
-                maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
+            //     // Replace the content from start to end with the new mask
+            //     maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
 
-                // Add a detailed entry to the log
-                this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
+            //     // Add a detailed entry to the log
+            //     this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
+            // });
+
+            sortedPredictions.forEach((prediction: any) => { // Treat each prediction as 'any' type
+
+            // --- THE KEY CHANGE IS HERE ---
+            // Extract the 'topic' string from each object in the array, then join.
+              const topics = prediction.predicted_topics
+                  .map((topicObj: any) => topicObj.topic) // Map the array of objects to an array of strings
+                  .join(', ');                            // Join the strings: "Card_Number, BankAccount"
+
+              const category = topics;
+              this.categoryFromModel.push(category);
+
+              const replacement = this.checkCategoryCount(category, prediction.sentence);
+              console.log(`Replacing sentence: "${prediction.sentence}" with mask: "${replacement}"`);
+
+              // This replacement logic is correct.
+              maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
+
+              this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
             });
 
             // The replacementLog is built in reverse, so we reverse it back for correct UI display

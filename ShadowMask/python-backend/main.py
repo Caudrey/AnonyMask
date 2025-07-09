@@ -70,7 +70,6 @@ def predict(request: PredictionRequest):
     logging.info("Received request for /predictImplicit")
 
     results = predict_implicit_pii(request.text)
-
     endDate = datetime.now()
     elapsed = (endDate - startDate).total_seconds()
     print(f"Start Date: {startDate}")
