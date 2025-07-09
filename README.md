@@ -92,7 +92,7 @@ cargo install tauri-cli
 1. Clone the Repository
 ``` 
 git clone https://github.com/Caudrey/AnonyMask
-cd ShadowMask
+cd AnonyMask/ShadowMask
 ```
 2. Install Angular Dependencies
 ```
