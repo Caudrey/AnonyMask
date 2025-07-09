@@ -87,22 +87,25 @@ export class MaskingFile implements OnInit {
   }
 
   ngOnInit(): void {
-    // this.originalContent = `Hi
-    // my email
-    //  is john@example.com
-    //   and phone is 1234567890.
-    //   Makan`;
-    // this.maskedContent = "[MASKED]";
-    // this.replacementLog = [
-    //   { original: 'john@example.com', replaced: '[EMAIL]' },
-    //   { original: '1234567890', replaced: '[PHONE]' },
-    // ];
+    this.originalContent = `Hi
+    my email
+     is john@example.com
+      and phone is 1234567890.
+      Makan`;
+    this.maskedContent = "[MASKED]";
+    this.replacementLog = [
+      { original: 'john@example.com', replaced: '[EMAIL]' },
+      { original: '1234567890', replaced: '[PHONE]' },
+    ];
     // this.generatePreviewTables();
     // this.generateDiffTokens();
-    // this.fileReady = true;
+    this.fileReady = true;
 
     this.generateHighlightedMaskedContent();
     this.renderHighlightedContent();
+    if (this.replacementLog.length === 0) {
+      console.warn('⚠️ replacementLog kosong. Pastikan Anda belum klik Fully Mask sebelum ini.');
+    }
   }
 
 
@@ -265,7 +268,7 @@ export class MaskingFile implements OnInit {
     this.isGenerating = true;
 
     this.activePreviewType = null;
-    this.selectedMaskType = null;
+    // this.selectedMaskType = null;
     this.clickedButton = '';
     this.clickedPartialButton = null;
 
@@ -273,10 +276,10 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
-    this.clickedPartialButton = null;
-    // this.partialMaskedStats = [];
+    // this.clickedPartialButton = null;
+    this.partialMaskedStats = [];
     this.maskedTokensWithDiff = [];
-    this.replacementLog = [];
+    // this.replacementLog = [];
 
     this.clearTermAndReplacement();
 
@@ -285,6 +288,10 @@ export class MaskingFile implements OnInit {
     if (this.originalContent) {
         this.maskedContent = this.originalContent;
     }
+
+     // Clear user-defined terms but preserve AI predictions
+  this.searchTermsUser = [];
+  this.replacementTermsUser = [];
 
     this.processOriginalContent(); // Re-process the original content with the new model
   }
@@ -854,8 +861,9 @@ export class MaskingFile implements OnInit {
 
   allRandomized(): void {
     let result = this.originalContent;
-    this.replacementLog = []; // Clear previous log
+    // this.replacementLog = []; // Clear previous log
     this.randomizedPreview = [];
+    // this.allRandomizedPreview = [];
     this.activePreviewType = 'all';
 
     for (let i = 0; i < this.searchTermsCategory.length; i++) {
@@ -863,13 +871,13 @@ export class MaskingFile implements OnInit {
       const type = this.categoryFromModel[i] || 'TEXT';
 
       const isSafeToReplaceAnywhere = term.length > 2 || /\W/.test(term);
-      const searchRegex = isSafeToReplaceAnywhere
+const searchRegex = isSafeToReplaceAnywhere
         ? new RegExp(this.escapeRegExp(term), 'g')              // match anywhere
         : new RegExp(`\\b${this.escapeRegExp(term)}\\b`, 'g');  // full-word only
 
-      result = result.replace(searchRegex, (match) => {
-        const replacement = this.randomizeSpecificContent(type, term);
-        this.replacementLog.push({ original: match, replaced: replacement });
+        result = result.replace(searchRegex, (match) => {
+      const replacement = this.randomizeSpecificContent(type, term);
+            this.replacementLog.push({ original: match, replaced: replacement });
 
         this.allRandomizedPreview.push({
           ori: match,
@@ -892,11 +900,11 @@ export class MaskingFile implements OnInit {
   }
 
   sameDataRandomized(): void {
-    this.replacementTermsRandomized = [];
-    this.replacementLog = [];
-    this.randomizedPreview = [];
+    // this.replacementTermsRandomized = [];
+    // this.replacementLog = [];
+    // this.randomizedPreview = [];
     this.activePreviewType = 'same';
-    this.allRandomizedPreview = [];
+    // this.allRandomizedPreview = [];
 
     for (let i = 0; i < this.categoryFromModel.length; i++) {
       const original = this.searchTermsDataRandomized[i];
@@ -909,11 +917,14 @@ export class MaskingFile implements OnInit {
         result: randomized
       });
 
-      this.generatePreviewTables();
-      this.generateDiffTokens();
+      this.replacementLog.push({ original, replaced: randomized });
+
     }
 
     this.maskedContent = this.replaceFromArray(this.originalContent, this.searchTermsDataRandomized, this.replacementTermsRandomized);
+
+    this.generatePreviewTables();
+    this.generateDiffTokens();
 
     console.log('🔍 Same Data Replacement Log:', this.replacementLog);
     this.replacementLog.forEach(log =>
@@ -978,6 +989,9 @@ export class MaskingFile implements OnInit {
   }
 
   generatePreviewTables(): void {
+    if (this.replacementLog.length === 0) {
+    return;
+  }
     this.generateDiffTokens();
 
     // CATEGORY ONLY Table (1 baris per kategori)
@@ -1050,10 +1064,10 @@ export class MaskingFile implements OnInit {
       this.searchTermsAllRandomized.push(word);
       this.searchTermsDataRandomized.push(word);
 
+      this.userMasking();
       this.generatePreviewTables();
       this.generateDiffTokens();
 
-      this.userMasking();
 
       // --- FIX: Refresh partial mask stats if a partial view is active ---
       if (this.clickedPartialButton) {
@@ -1105,7 +1119,6 @@ export class MaskingFile implements OnInit {
     this.valueOnlyTable = [];
     this.allRandomizedPreview = [];
     this.randomizedPreview = [];
-    this.partialMaskedStats = [];
   }
 
   selectMaskType(type: 'partial' | 'full') {

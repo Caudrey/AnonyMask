@@ -330,7 +330,7 @@
 
     <button
       [ngClass]="{ 'clicked': selectedMaskType === 'full' }"
-      (click)="selectMaskType('full'); resetAllPreviews()"
+      (click)="selectMaskType('full')"
     >🛡️ Fully Mask</button>
   </div>
 
@@ -440,9 +440,11 @@
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let row of allRandomizedPreview; let i = index">
+      <tr *ngFor="let row of allRandomizedPreview">
+<!--  -->
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
+        <!-- <td>{{ row.result }}</td> -->
         <td>
           <input
             [(ngModel)]="row.result"
@@ -508,7 +510,7 @@
 
   <!-- TABEL PREVIEW UNTUK PARTIAL MASKING -->
   <div
-    *ngIf="selectedMaskType === 'partial' && clickedPartialButton === 'prefix-suffix' && partialMaskedStats.length > 0"
+    *ngIf="selectedMaskType === 'partial' && partialMaskedStats.length > 0"
     class="mapping-table-box"
   >
     <h4 class="preview-title">🧪 Preview for Partial Masking</h4>
@@ -557,6 +559,8 @@
 
 
 </div>
+
+
 
 
 
