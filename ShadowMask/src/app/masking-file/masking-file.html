@@ -1,139 +1,9 @@
-<!-- <p class="text-xs">fileReady: {{ fileReady }}</p>
-
-<div class="container">
-  <h2 class="title">Privacy Masking File</h2>
-
-  <div class="file-section">
-    <input type="file" (change)="onUpload($event)" class="input" />
-    <button
-      class="button"
-      [disabled]="!fileReady"
-      (click)="onDownload()"
-    >
-      ⬇ Download Masked File
-    </button>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option A: Clean Layout</h3>
-    <div class="grid-cols">
-      <div>
-        <h4>📄 Original File</h4>
-        <pre>{{ originalContent }}</pre>
-      </div>
-      <div>
-        <h4>🛡️ Masked Output</h4>
-        <pre class="masked">{{ maskedContent }}</pre>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option B: Card Layout</h3>
-    <div class="card-grid">
-      <div class="card">
-        <h4>Original</h4>
-        <pre>{{ originalContent }}</pre>
-      </div>
-      <div class="card">
-        <h4>Masked</h4>
-        <pre class="masked">{{ maskedContent }}</pre>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option C: Line-by-line Diff</h3>
-    <div class="diff-block">
-      <div *ngFor="let line of getDiffLines()" [ngClass]="line.changed ? 'changed' : 'unchanged'">
-        {{ line.line }}
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option D: Line-by-line Diff</h3>
-    <div class="diff-table">
-      <div class="diff-header">
-        <span>📄 Original</span>
-        <span>🛡️ Masked</span>
-      </div>
-
-      <div *ngFor="let line of getDiffLines2()" class="diff-row">
-        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.original }}</div>
-        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.masked }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option E: Clean Diff Layout with Highlight</h3>
-    <div class="grid-cols">
-      <div>
-        <h4>📄 Original File</h4>
-        <div class="diff-box">
-          <div
-            *ngFor="let line of getDiffLines2()"
-            [ngClass]="line.changed ? 'changed' : 'unchanged'"
-          >
-            {{ line.original }}
-          </div>
-        </div>
-      </div>
-
-      <div>
-        <h4>🛡️ Masked Output</h4>
-        <div class="diff-box">
-          <div
-            *ngFor="let line of getDiffLines2()"
-            [ngClass]="line.changed ? 'changed' : 'unchanged'"
-          >
-            {{ line.masked }}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div> -->
-<!-- Processing Popup -->
 <div class="overlay" *ngIf="isGenerating">
   <div class="popup">
     <span class="spinner"></span>
     <p>🔄 Processing masking, please wait...</p>
   </div>
 </div>
-
-<!-- <div class="model-tabs">
-  <button
-    [class.active]="selectedModel === 'explicit'"
-    (click)="selectedModel = 'explicit'"
-  >
-    🔍 Explicit Model
-  </button>
-
-  <button
-    [class.active]="selectedModel === 'implicit'"
-    (click)="selectedModel = 'implicit'"
-  >
-    🤖 Implicit Model
-  </button>
-</div> -->
-
-<!-- <div class="tab-header">
-  <button
-    [class.active]="selectedModel === 'explicit'"
-    (click)="selectedModel = 'explicit'"
-  >
-    🔍 Explicit
-  </button>
-  <button
-    [class.active]="selectedModel === 'implicit'"
-    (click)="selectedModel = 'implicit'"
-  >
-    🤖 Implicit
-  </button>
-</div> -->
 
 <div class="horizontal-tabs">
   <button
@@ -150,22 +20,9 @@
   </button>
 </div>
 
-<!-- <div class="main-content">
-  <ng-container *ngIf="selectedModel === 'explicit'">
-    Explicit model content
-  </ng-container>
-
-  <ng-container *ngIf="selectedModel === 'implicit'">
-    Implicit model content
-  </ng-container>
-</div> -->
-
-
-<!-- <p class="text-xs">fileReady: {{ fileReady }}</p> -->
 <div class="wrapper">
   <h2 class="title">🛡️ Privacy Masking System</h2>
 
-  <!-- Upload + Download Section -->
   <div class="upload-box">
     <div class="upload-group">
       <div class="upload-item">
@@ -186,47 +43,15 @@
     </div>
   </div>
 
-  <!-- Option A
   <div *ngIf="fileReady" class="preview-box">
-  <h3 class="preview-title">🔐 Masking Preview</h3>
-    <div class="grid-cols">
-      <div>
-        <h4>📜 Original Content</h4>
-        <div class="text-preview">
-          <ng-container *ngFor="let token of originalTokensWithDiff">
-            <span
-              [ngClass]="{ 'highlight-masked': token.changed }"
-              (click)="onWordClick(token.word)"
-              class="clickable-word"
-            >
-              {{ token.word }}
-            </span>
-            <span>&nbsp;</span>
-          </ng-container>
-        </div>
-      </div>
-
-      <div>
-        <h4>🛡️ Masked Output</h4>
-          <div class="text-preview">
-            <ng-container *ngFor="let token of maskedTokensWithDiff">
-              <span [ngClass]="{ 'highlight-masked': token.changed }">{{ token.word }}</span>
-              <span>&nbsp;</span>
-            </ng-container>
-          </div>
-      </div>
-    </div>
-  </div> -->
-
-  <div *ngIf="fileReady" class="preview-box">
-  <h3 class="preview-title">🔐 Masking Preview</h3>
+    <h3 class="preview-title">🔐 Masking Preview</h3>
     <div class="grid-cols">
       <div>
         <div class="title-original-file">
           <h4>📄 Original File</h4>
           <div class="tooltip-wrapper">
-             <button class="rounded-btn" (click)="startAdding()">➕ Add</button>
-             <div class="tooltip-bubble">🖱️ Drag to add new words!</div>
+            <button class="rounded-btn" (click)="startAdding()">➕ Add</button>
+            <div class="tooltip-bubble">🖱️ Drag to add new words!</div>
           </div>
 
           <button *ngIf="isAdding" (click)="doneAdding()" class="rounded-btn done">✅ Done</button>
@@ -238,94 +63,21 @@
           <h4>🛡️ Masked Output</h4>
         </div>
         <div class="text-box masked" [innerHTML]="highlightedMaskedContent"></div>
-        <!-- <div class="text-box masked">
-          {{ maskedContent }}
-        </div> -->
       </div>
     </div>
   </div>
 
-
-  <!-- <div *ngIf="fileReady">
-    <h3 class="subtitle">Option B: Card Layout</h3>
-    <div class="card-grid">
-      <div class="card">
-        <h4>Original</h4>
-        <pre>{{ originalContent }}</pre>
-      </div>
-      <div class="card">
-        <h4>Masked</h4>
-        <pre class="masked">{{ maskedContent }}</pre>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option C: Line-by-line Diff</h3>
-    <div class="diff-block">
-      <div *ngFor="let line of getDiffLines()" [ngClass]="line.changed ? 'changed' : 'unchanged'">
-        {{ line.line }}
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option D: Line-by-line Diff</h3>
-    <div class="diff-table">
-      <div class="diff-header">
-        <span>📄 Original</span>
-        <span>🛡️ Masked</span>
-      </div>
-
-      <div *ngFor="let line of getDiffLines2()" class="diff-row">
-        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.original }}</div>
-        <div [ngClass]="line.changed ? 'changed' : 'unchanged'">{{ line.masked }}</div>
-      </div>
-    </div>
-  </div>
-
-  <div *ngIf="fileReady">
-    <h3 class="subtitle">Option E: Clean Diff Layout with Highlight</h3>
-    <div class="grid-cols">
-      <div>
-        <h4>📄 Original File</h4>
-        <div class="diff-box">
-          <div
-            *ngFor="let line of getDiffLines2()"
-            [ngClass]="line.changed ? 'changed' : 'unchanged'"
-          >
-            {{ line.original }}
-          </div>
-        </div>
-      </div> -->
-
-      <!-- <div class="mask-selection">
-        <h3>🔐 Choose Masking Mode</h3>
-        <button (click)="selectMaskType('partial'); resetAllPreviews()">🧩 Partial Mask</button>
-        <button *ngIf="fileReady"
-          [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
-          (click)="handlePartialClick('redact'); resetAllPreviews()"
-        >✂ Redact Mask</button>
-        <button *ngIf="fileReady"
-          [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
-          (click)="handlePartialClick('prefix-suffix'); resetAllPreviews()"
-        >🧩 Prefix & Suffix Mask</button>
-        <button (click)="selectMaskType('full'); resetAllPreviews()">🛡️ Fully Mask</button>
-      </div>
- -->
-
-  <!-- Masking Mode Buttons -->
   <div class="mask-selection" *ngIf="fileReady">
     <h3>🔐 Choose Masking Mode</h3>
 
     <button
       [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
-      (click)="selectMaskType('partial'); handlePartialClick('redact'); resetAllPreviews()"
+      (click)="selectMaskType('partial'); handlePartialClick('redact');"
     >✂ Redact Mask</button>
 
     <button
       [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
-      (click)="selectMaskType('partial'); handlePartialClick('prefix-suffix'); resetAllPreviews()"
+      (click)="selectMaskType('partial'); handlePartialClick('prefix-suffix');"
     >🧩 Partial Mask</button>
 
     <button
@@ -359,12 +111,10 @@
   </div>
 
 
-  <!-- Warning for ALL RANDOMIZED -->
   <div *ngIf="clickedButton === 'all-randomized'" class="warning-box">
     ⚠️ Randomizing all values may affect LLM output.
   </div>
 
-  <!-- Warning if replacing with full sentences -->
   <div *ngIf="clickedButton === 'value'" class="warning-box">
     ⚠️ Replacing with sentences, then altered by llm, will cause unmasking to fail.
   </div>
@@ -375,15 +125,13 @@
         <th>Original Text</th>
         <th>Type/Category</th>
         <th>Masked Result</th>
-        <th>Count</th>
-        <th></th> <!-- Kolom hapus -->
+        <th></th>
       </tr></thead>
     <tbody>
       <tr *ngFor="let row of categoryOnlyTable">
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
         <td>{{ row.masked }}</td>
-        <td>{{ row.count }}</td>
         <td>
           <div class="btn-wrapper">
             <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
@@ -407,7 +155,6 @@
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
         <td>
-          <!-- <input [(ngModel)]="row.masked" class="masked-input" (change)="updateReplacementsFromTable()" /> -->
           <input
             [(ngModel)]="row.masked"
             (blur)="onMaskedValueChange(row.ori, row.masked)"
@@ -424,13 +171,6 @@
 
 
   <table *ngIf="activePreviewType === 'all'">
-    <!-- <thead><tr><th>ori</th><th>masked</th></tr></thead>
-    <tbody>
-      <tr *ngFor="let row of replacementLog">
-        <td>{{ row.original }}</td>
-        <td>{{ row.replaced }}</td>
-      </tr>
-    </tbody> -->
     <thead>
       <tr>
         <th>Original Text</th>
@@ -441,10 +181,8 @@
     </thead>
     <tbody>
       <tr *ngFor="let row of allRandomizedPreview">
-<!--  -->
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
-        <!-- <td>{{ row.result }}</td> -->
         <td>
           <input
             [(ngModel)]="row.result"
@@ -461,13 +199,6 @@
   </table>
 
   <table *ngIf="activePreviewType === 'same'">
-    <!-- <thead><tr><th>ori</th><th>masked</th></tr></thead>
-    <tbody>
-      <tr *ngFor="let row of randomizedPreview">
-        <td>{{ row.ori }}</td>
-        <td>{{ row.result }}</td>
-      </tr>
-    </tbody> -->
     <thead>
       <tr>
         <th>Original Text</th>
@@ -480,13 +211,7 @@
       <tr *ngFor="let row of randomizedPreview">
         <td>{{ row.ori }}</td>
         <td>{{ row.type }}</td>
-        <!-- <td>
-          <input
-            [(ngModel)]="row.masked"
-            (blur)="onMaskedValueChange(row.ori, row.masked)"
-            class="masked-input" />
-        </td> -->
-         <td>{{ row.result }}</td>
+        <td>{{ row.result }}</td>
       <td>
           <div class="btn-wrapper">
             <button class="remove-btn" (click)="removePreviewRow(row.ori)">-</button>
@@ -496,21 +221,8 @@
     </tbody>
   </table>
 
-  <!-- <div class="mini-navbar" *ngIf="fileReady && selectedMaskType === 'partial'">
-    <button
-      [ngClass]="{ 'clicked': clickedPartialButton === 'redact' }"
-      (click)="handlePartialClick('redact')"
-    >✂ Redact Mask</button>
-
-    <button
-      [ngClass]="{ 'clicked': clickedPartialButton === 'prefix-suffix' }"
-      (click)="handlePartialClick('prefix-suffix')"
-    >🧩 Prefix & Suffix Mask</button>
-  </div> -->
-
-  <!-- TABEL PREVIEW UNTUK PARTIAL MASKING -->
   <div
-    *ngIf="selectedMaskType === 'partial' && partialMaskedStats.length > 0"
+    *ngIf="selectedMaskType === 'partial' && clickedPartialButton === 'prefix-suffix' && partialMaskedStats.length > 0"
     class="mapping-table-box"
   >
     <h4 class="preview-title">🧪 Preview for Partial Masking</h4>
@@ -518,14 +230,14 @@
       <thead>
         <tr>
           <th>🔤 Original Text</th>
-          <th>🔧 Masked Text </th>
+          <th>🔧 Masked Text</th>
           <th>🔢 Count</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of partialMaskedStats">
+          <td>{{ item.originalMatchedWords }}</td>
           <td>{{ item.word }}</td>
-          <td>{{ item.format }}</td>
           <td>{{ item.count }}</td>
         </tr>
       </tbody>
@@ -533,39 +245,26 @@
   </div>
 
 
-    <!-- TABEL PREVIEW UNTUK REDACT MASKING -->
   <div
-    *ngIf="selectedMaskType === 'partial' && clickedPartialButton  === 'redact' && partialMaskedStats.length > 0"
+    *ngIf="selectedMaskType === 'partial' && clickedPartialButton === 'redact' && partialMaskedStats.length > 0"
     class="mapping-table-box"
   >
-    <h4 class="preview-title">🧪 Preview for Partial Masking</h4>
+    <h4 class="preview-title">🧪 Preview for Redact Masking</h4>
     <table class="mapping-table">
       <thead>
         <tr>
           <th>🔤 Original Text</th>
-          <th>🔧 Masked Text </th>
+          <th>🔧 Masked Text</th>
           <th>🔢 Count</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let item of partialMaskedStats">
+          <td>{{ item.originalMatchedWords }}</td>
           <td>{{ item.word }}</td>
-          <td>{{ item.format }}</td>
           <td>{{ item.count }}</td>
         </tr>
       </tbody>
     </table>
   </div>
-
-
 </div>
-
-
-
-
-
-<!-- Hasil akhir
-<div *ngIf="maskedContent">
-  <h3>Hasil Masking:</h3>
-<p>{{ maskedContent }}</p>
-</div> -->

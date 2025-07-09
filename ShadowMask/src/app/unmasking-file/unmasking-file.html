@@ -25,7 +25,7 @@
       <div class="upload-item">
         <label>🧠 Masking Log (JSON)</label>
         <input type="file" (change)="uploadUnmaskingJson($event)" accept=".json" />
-        <span *ngIf="maskedMapping.length">✅ {{ processedMaskedFileName }}</span>
+        <span *ngIf="maskedMapping.length">✅ {{ mappingLogJsonFileName }}</span>
       </div>
 
       <div class="upload-item">
