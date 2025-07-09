@@ -2,7 +2,7 @@
 
 <p align="center" width="100">
 
-<img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/AnonyMask.png">
+<img src="ShadowMask/assets/AnonyMask.png">
 
 </p>
 
@@ -117,27 +117,27 @@ cargo tauri dev
 ### 🔒 Masking File
 | Input File | Choose Model | Choose Masking Option | Download Masked File |
 | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/1_inputFile.gif" width="500"> File format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/2_chooseModel.gif" width="500"> Model: Explicit or Implicit| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/3_chooseMaskingOption.gif" width="500"> Options: Redacted, Partial, Full Masking (Category, Value, All Random, Same Random) | <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/4_downloadMaskedFile.gif" width="500"> Output: Masked File and Mapping Log File
+| <img src="ShadowMask/assets/1_inputFile.gif" width="500"> File format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/2_chooseModel.gif" width="500"> Model: Explicit or Implicit| <img src="ShadowMask/assets/3_chooseMaskingOption.gif" width="500"> Options: Redacted, Partial, Full Masking (Category, Value, All Random, Same Random) | <img src="ShadowMask/assets/4_downloadMaskedFile.gif" width="500"> Output: Masked File and Mapping Log File
 
 <br>
 
 | Original File | Masked File | Mapping Log |
 | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/originalFile.jpeg" width="500">  [Example Original File](https://github.com/Caudrey/AnonyMask/exampleFile/originalFile)| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Masked File](https://github.com/Caudrey/AnonyMask/exampleFile/maskedFile)| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/mappingLog.jpeg" width="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/exampleFile/mappingLogFile) | 
+| <img src="ShadowMask/assets/originalFile.jpeg" width="500">  [Example Original File](https://github.com/Caudrey/AnonyMask/exampleFile/originalFile)| <img src="ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Masked File](https://github.com/Caudrey/AnonyMask/exampleFile/maskedFile)| <img src="ShadowMask/assets/mappingLog.jpeg" width="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/exampleFile/mappingLogFile) | 
 
 <br>
 
 ### 🔓 Unmasking File
 | Input Mapping Log | Input Processed File | Download Unmasking Result |
 |:---------:|:-----------------------:|:-----------------------:|
-| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/1_inputMappingLog.gif" width="500"> Use mapping log generated during masking (format: .json) | <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/2_inputProcessedFile.gif" width="250"> File Format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/3_downloadUnmaskingResult.gif" width="250"> File will be automatically unmasked for download 
+| <img src="ShadowMask/assets/1_inputMappingLog.gif" width="500"> Use mapping log generated during masking (format: .json) | <img src="ShadowMask/assets/2_inputProcessedFile.gif" width="250"> File Format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/3_downloadUnmaskingResult.gif" width="250"> File will be automatically unmasked for download 
 
 
 <br>
 
 | Processed File | Unmasked File | 
 | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/originalFile.jpeg" width="500"> [Example Processed File](https://github.com/Caudrey/AnonyMask/exampleFile/processedFile)| <img src="https://github.com/Caudrey/AnonyMask/ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Unmasked File](https://github.com/Caudrey/AnonyMask/exampleFile/unmaskedFile)| 
+| <img src="ShadowMask/assets/originalFile.jpeg" width="500"> [Example Processed File](https://github.com/Caudrey/AnonyMask/exampleFile/processedFile)| <img src="ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Unmasked File](https://github.com/Caudrey/AnonyMask/exampleFile/unmaskedFile)| 
 
 
 <br><br>
