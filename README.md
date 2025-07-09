@@ -123,7 +123,7 @@ cargo tauri dev
 
 | Original File | Masked File | Mapping Log |
 | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="ShadowMask/assets/originalFile.jpeg" width="500">  [Example Original File](https://github.com/Caudrey/AnonyMask/exampleFile/originalFile)| <img src="ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Masked File](https://github.com/Caudrey/AnonyMask/exampleFile/maskedFile)| <img src="ShadowMask/assets/mappingLog.jpeg" width="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/exampleFile/mappingLogFile) | 
+| <img src="ShadowMask/assets/originalFile.jpeg" width="500">  [Example Original File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/original_document) | <img src="ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Masked File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masked_document) | <img src="ShadowMask/assets/mappingLog.jpeg" width="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masking_log) | 
 
 <br>
 
@@ -137,7 +137,7 @@ cargo tauri dev
 
 | Processed File | Unmasked File | 
 | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="ShadowMask/assets/originalFile.jpeg" width="500"> [Example Processed File](https://github.com/Caudrey/AnonyMask/exampleFile/processedFile)| <img src="ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Unmasked File](https://github.com/Caudrey/AnonyMask/exampleFile/unmaskedFile)| 
+| <img src="ShadowMask/assets/originalFile.jpeg" width="500"> [Example Processed File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/processed_masked_document) | <img src="ShadowMask/assets/maskedFile.jpeg" width="500"> [Example Unmasked File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/unmasked_processed_file)| 
 
 
 <br><br>
