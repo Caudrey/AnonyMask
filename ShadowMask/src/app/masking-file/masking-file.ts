@@ -331,21 +331,39 @@ export class MaskingFile implements OnInit {
   processOriginalContent(): void {
     this.resetCategoryCounts();
     this.maskPrivacy(this.originalContent).subscribe({
-      next: (resultString) => {
-        console.log('API call successful, result received!');
-        this.maskedContent = resultString;
+          next: (resultString) => {
+            // This code runs ONLY after the API call is successful
+            console.log("API call successful, result received!");
+            this.maskedContent = resultString;
+            console.log(resultString)
 
-        // aiDetectedPii dari replacementLog yang dihasilkan API
-        this.aiDetectedPii = [];
-        this.replacementLog.forEach((logEntry) => {
-          // Ekstrak kategori dari `replaced` string jika formatnya `[CATEGORY_X]`
-          const categoryMatch = logEntry.replaced.match(/\[(.*?)_?\d*\]/);
-          const category = categoryMatch ? categoryMatch[1] : 'UNKNOWN'; // Default 'UNKNOWN' jika tidak sesuai format
-          this.aiDetectedPii.push({
-            original: logEntry.original,
-            category: category,
-            replaced: logEntry.replaced,
-          });
+            // aiDetectedPii dari replacementLog yang dihasilkan API
+            this.aiDetectedPii = [];
+            this.replacementLog.forEach((logEntry) => {
+            // Ekstrak kategori dari `replaced` string jika formatnya `[CATEGORY_X]`
+            const categoryMatch = logEntry.replaced.match(/\[(.*?)_?\d*\]/);
+            const category = categoryMatch ? categoryMatch[1] : 'UNKNOWN'; // Default 'UNKNOWN' jika tidak sesuai format
+            this.aiDetectedPii.push({
+              original: logEntry.original,
+              category: category,
+              replaced: logEntry.replaced,
+            });
+              
+            // The replacementLog is now set by the API response, so we can generate tables
+//             this.generateDiffTokens();
+//             this.generatePreviewTables();
+//             this.addPredictionsToSearchLists(this.replacementLog);
+//             this.generateHighlightedMaskedContent();
+//             console.log("Haii" + this.categoryOnlyTable)
+//             this.fileReady = true;
+//             this.isGenerating = false;
+//             console.log("Log generated from APIS:", this.replacementLog)
+          },
+          error: (err) => {
+            console.error("API Error:", err);
+            this.isGenerating = false;
+            this.fileReady = false; // Optionally show an error state
+          }
         });
 
         this.searchTermsCategory = this.aiDetectedPii.map((p) => p.original);
@@ -466,16 +484,69 @@ export class MaskingFile implements OnInit {
     } else {
       // Implicit
       return this.apiService.getPredictionsImplicit(content).pipe(
-        map((response) => {
-          const predictions = response.predictions;
+//         map((response) => {
+//           const predictions = response.predictions;
 
-          if (
-            !predictions ||
-            !Array.isArray(predictions) ||
-            predictions.length === 0
-          ) {
-            return content;
-          }
+//           if (
+//             !predictions ||
+//             !Array.isArray(predictions) ||
+//             predictions.length === 0
+//           ) {
+//             return content;
+//           }
+        map(response => {
+            // The API now returns a list of objects with sentence, topics, start, and end
+            const predictions: any[] = response.predictions;
+
+            console.log("Received predictions from backend:", predictions);
+
+            console.log(response.predictions)
+            this.replacementLog = [];
+
+            // This handles cases where the API returns {} or an empty list [].
+            if (!predictions || !Array.isArray(predictions) || predictions.length === 0) {
+                return content;
+            }
+
+            // 3. Sort predictions in REVERSE order of their start position.
+            // This is critical to avoid messing up the indices of subsequent replacements.
+            const sortedPredictions = predictions.sort((a: any, b: any) => b.start - a.start);
+            let maskedCont = content;
+
+            // 4. Loop through the predictions and replace the original sentence with a mask
+            // sortedPredictions.forEach((prediction: { sentence: string, predicted_topics: string[], start: number, end: number }) => {
+            //     const topics = prediction.predicted_topics.join(', ');
+            //     const category = topics;
+            //     this.categoryFromModel.push(category);
+            //     const replacement = this.checkCategoryCount(category, prediction.sentence);
+            //     console.log("replace: " + prediction.sentence + " , " + replacement);
+
+            //     // Replace the content from start to end with the new mask
+            //     maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
+
+            //     // Add a detailed entry to the log
+            //     this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
+            // });
+
+            sortedPredictions.forEach((prediction: any) => { // Treat each prediction as 'any' type
+
+            // --- THE KEY CHANGE IS HERE ---
+            // Extract the 'topic' string from each object in the array, then join.
+              const topics = prediction.predicted_topics
+                  .map((topicObj: any) => topicObj.topic) // Map the array of objects to an array of strings
+                  .join(', ');                            // Join the strings: "Card_Number, BankAccount"
+
+              const category = topics;
+              this.categoryFromModel.push(category);
+
+              const replacement = this.checkCategoryCount(category, prediction.sentence);
+              console.log(`Replacing sentence: "${prediction.sentence}" with mask: "${replacement}"`);
+
+              // This replacement logic is correct.
+              maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
+
+              this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
+            });
 
           const sortedPredictions = predictions.sort(
             (a: any, b: any) => b.start - a.start
