@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "ShadowMask": {
+    "AnonyMask": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -71,10 +71,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "ShadowMask:build:production"
+              "buildTarget": "AnonyMask:build:production"
             },
             "development": {
-              "buildTarget": "ShadowMask:build:development"
+              "buildTarget": "AnonyMask:build:development"
             }
           },
           "defaultConfiguration": "development"

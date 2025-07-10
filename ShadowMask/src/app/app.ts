@@ -10,7 +10,7 @@ import { NavBar } from './nav-bar/nav-bar';
   styleUrl: './app.scss'
 })
 export class App {
-  protected title = 'ShadowMask';
+  protected title = 'AnonyMask';
 
   // result = '';
 
