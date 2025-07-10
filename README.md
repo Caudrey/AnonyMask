@@ -116,24 +116,26 @@ cargo tauri dev
 ### 🔒 Masking File
 | Input File | Add / Exclude Word | Choose Model  | Choose Masking Option | Download Masked File |
 | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="ShadowMask/assets/1_inputFile.gif" width="500"> File format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/2_addExcludeWord.gif" width="500"> Click and drag to add a word. <br> Remove it by clicking the red button. | <img src="ShadowMask/assets/3_chooseModel.gif" width="500"> Model: Explicit or Implicit | <img src="ShadowMask/assets/4_chooseMaskingOption.gif" width="500"> Options: Redacted, Partial, Full Masking (Category, Value, All Random, Same Random) | <img src="ShadowMask/assets/5_downloadMaskedFile.gif" width="500"> Output: Masked File and Mapping Log File
+| <img src="ShadowMask/assets/1_inputFile.gif" width="500"> File format: .txt, .csv, .pdf, .docx, .xlsx, and .xls <br><br> | <img src="ShadowMask/assets/2_addExcludeWord.gif" width="500"> Click and drag to add a word. <br> Remove it by clicking the red button. | <img src="ShadowMask/assets/3_chooseModel.gif" width="500"> Model: Explicit or Implicit  <br><br> | <img src="ShadowMask/assets/4_chooseMaskingOption.gif" width="500"> Options: Redacted, Partial, Full Masking (Category, Value, All Random, Same Random) | <img src="ShadowMask/assets/5_downloadMaskedFile.gif" width="500"> Output: Masked File and Mapping Log File  <br><br> 
 
 <br>
 
+#### File Example
 | Original File | Masked File | Mapping Log |
 | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
 | <img src="ShadowMask/assets/original_document.png" height="500">  [Example Original File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/original_document) | <img src="ShadowMask/assets/masked_document.png" height="500"> [Example Masked File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masked_document) | <img src="ShadowMask/assets/masking_log.png" height="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masking_log) | 
 
-<br>
+<br><br>
 
 ### 🔓 Unmasking File
 | Process Unmasking File | Download Unmasking Result |
 |:---------:|:-----------------------:|
-| <img src="ShadowMask/assets/1_unmaskingProcess.gif" width="500"> Input mapping log generated during masking (.json) and processed file (.txt, .csv, .pdf, .docx, .xlsx, and .xls) | <img src="ShadowMask/assets/2_downloadUnmaskingResult.gif" width="250"> File will be automatically unmasked for download 
+| <img src="ShadowMask/assets/1_unmaskingProcess.gif" width="500"> Input mapping log generated during masking (.json) and processed file (.txt, .csv, .pdf, .docx, .xlsx, and .xls) | <img src="ShadowMask/assets/2_downloadUnmaskingResult.gif" width="500"> File will be automatically unmasked for download <br><br>
 
 
 <br>
 
+#### File Example
 | Processed File | Unmasked File | 
 | ---------------------------------------------------- | ---------------------------------------------------- |
 | <img src="ShadowMask/assets/processed_document.png" height="500"> [Example Processed File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/processed_masked_document) | <img src="ShadowMask/assets/unmasked_processed_document.png" height="500"> [Example Unmasked File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/unmasked_processed_file)| 
