@@ -35,17 +35,21 @@ fn main() {
                 .open(&log_path)
                 .expect("❌ Failed to open backend.log");
 
-            // Log the attempted backend path
-            writeln!(log_file, "[INFO] Launching Python backend at: {:?}", python_backend_path)
-                .expect("❌ Failed to write to backend.log");
+            if python_backend_path.exists() {
+                writeln!(log_file, "[INFO] Launching Python backend at: {:?}", python_backend_path)
+                    .expect("❌ Failed to write to backend.log");
 
-            // Start the Python backend and redirect stdout/stderr to the log file
-            Command::new(python_backend_path)
-                .stdout(log_file.try_clone().expect("❌ Failed to clone log file for stdout"))
-                .stderr(log_file)
-                .spawn()
-                .expect("❌ Failed to start Python backend");
-
+                // Start the Python backend and redirect stdout/stderr to the log file
+                Command::new(python_backend_path)
+                    .stdout(log_file.try_clone().expect("❌ Failed to clone log file for stdout"))
+                    .stderr(log_file)
+                    .spawn()
+                    .expect("❌ Failed to start Python backend");
+            } else {
+                writeln!(log_file, "[WARN] Python backend not found at: {:?}", python_backend_path)
+                    .expect("❌ Failed to write missing backend warning to log");
+                // Continue without launching Python backend
+            }
             Ok(())
         })
         .run(tauri::generate_context!())
