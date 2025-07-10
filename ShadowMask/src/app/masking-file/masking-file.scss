@@ -855,6 +855,23 @@ table {
   border-radius: 4px;
 }
 
+/* Untuk Original File */
+.text-box mark.confirmed {
+  background-color: yellow;
+  padding: 2px 0;
+}
+
+.text-box mark.temporary {
+  background-color: yellow;
+  padding: 2px 0;
+}
+
+/* Untuk Masked Output */
+.text-box.masked mark.highlight-masked {
+  background-color: yellow;
+  padding: 2px 0;
+}
+
 .clickable-word {
   cursor: pointer;
 }

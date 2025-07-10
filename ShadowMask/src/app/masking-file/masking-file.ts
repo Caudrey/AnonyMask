@@ -1690,12 +1690,38 @@ export class MaskingFile implements OnInit {
     this.generateHighlightedMaskedContent();
   }
 
+  // renderHighlightedContent(): void {
+  //   let html = this.originalContent;
+
+  //   this.searchTermsUser.forEach((term) => {
+  //     const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //     const regex = new RegExp(`(${safeTerm})`, 'g');
+  //     html = html.replace(regex, `<mark class="confirmed">$1</mark>`);
+  //   });
+
+  //   if (this.currentSelected && this.isAdding) {
+  //     const safeCurrent = this.currentSelected.replace(
+  //       /[.*+?^${}()|[\]\\]/g,
+  //       '\\$&'
+  //     );
+  //     const regex = new RegExp(`(${safeCurrent})(?![^<]*<\/mark>)`, 'g'); // skip already marked
+  //     html = html.replace(regex, `<mark class="temporary">$1</mark>`);
+  //   }
+
+  //   this.highlightedContent = html.replace(/\n/g, '<br>');
+  // }
+
   renderHighlightedContent(): void {
     let html = this.originalContent;
 
-    this.searchTermsUser.forEach((term) => {
+    const allTermsToHighlight = new Set<string>();
+    this.aiDetectedPii.forEach(entry => allTermsToHighlight.add(entry.original)); // Dari AI
+    this.searchTermsUser.forEach(term => allTermsToHighlight.add(term)); // Dari pengguna
+
+    allTermsToHighlight.forEach((term) => {
       const safeTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`(${safeTerm})`, 'g');
+      const regexString = /[^\w\s]|\s/.test(term) ? `(${safeTerm})` : `\\b(${safeTerm})\\b`;
+      const regex = new RegExp(regexString, 'g');
       html = html.replace(regex, `<mark class="confirmed">$1</mark>`);
     });
 
@@ -1704,7 +1730,7 @@ export class MaskingFile implements OnInit {
         /[.*+?^${}()|[\]\\]/g,
         '\\$&'
       );
-      const regex = new RegExp(`(${safeCurrent})(?![^<]*<\/mark>)`, 'g'); // skip already marked
+      const regex = new RegExp(`(${safeCurrent})(?![^<]*<\\/mark>)`, 'g');
       html = html.replace(regex, `<mark class="temporary">$1</mark>`);
     }
 
@@ -1726,6 +1752,35 @@ export class MaskingFile implements OnInit {
     this.generatePreviewTables();
   }
 
+  // private generateHighlightedMaskedContent(): void {
+  //   let tempHighlightedContent = this.maskedContent;
+  //   const maskedValuesToHighlight = new Set(
+  //     this.replacementLog.map((log) => log.replaced)
+  //   );
+
+  //   maskedValuesToHighlight.forEach((maskedWord) => {
+  //     const safeMaskedWord = maskedWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  //     const regex = new RegExp(
+  //       `(?<!<mark[^>]*>)(?<=\\b)(${safeMaskedWord})(?!<\\/mark)(?=\\b)`,
+  //       'g'
+  //     );
+
+  //     tempHighlightedContent = tempHighlightedContent.replace(
+  //       regex,
+  //       `<mark class="highlight-masked">$1</mark>`
+  //     );
+  //   });
+
+  //   this.highlightedMaskedContent = tempHighlightedContent.replace(
+  //     /\n/g,
+  //     '<br>'
+  //   );
+  //   console.log(
+  //     'Generated highlightedMaskedContent:',
+  //     this.highlightedMaskedContent
+  //   );
+  // }
+
   private generateHighlightedMaskedContent(): void {
     let tempHighlightedContent = this.maskedContent;
     const maskedValuesToHighlight = new Set(
@@ -1734,10 +1789,15 @@ export class MaskingFile implements OnInit {
 
     maskedValuesToHighlight.forEach((maskedWord) => {
       const safeMaskedWord = maskedWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(
-        `(?<!<mark[^>]*>)(?<=\\b)(${safeMaskedWord})(?!<\\/mark)(?=\\b)`,
-        'g'
-      );
+      let regex: RegExp;
+
+      const needsWordBoundary = !/[^\w\s]/.test(maskedWord);
+
+      if (needsWordBoundary) {
+        regex = new RegExp(`(?<!<mark[^>]*>)\\b(${safeMaskedWord})\\b(?!<\\/mark)`, 'g');
+      } else {
+        regex = new RegExp(`(?<!<mark[^>]*>)(${safeMaskedWord})(?!<\\/mark)`, 'g');
+      }
 
       tempHighlightedContent = tempHighlightedContent.replace(
         regex,
