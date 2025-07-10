@@ -129,7 +129,7 @@ cargo tauri dev
 
 ### 🔓 Unmasking File
 | Process Unmasking File | Download Unmasking Result |
-|:---------:|:-----------------------:|
+| ---------------------------------------------------- | ---------------------------------------------------- |
 | <img src="ShadowMask/assets/1_unmaskingProcess.gif" width="500"> Input mapping log generated during masking (.json) and processed file (.txt, .csv, .pdf, .docx, .xlsx, and .xls) | <img src="ShadowMask/assets/2_downloadUnmaskingResult.gif" width="500"> File will be automatically unmasked for download <br><br>
 
 
