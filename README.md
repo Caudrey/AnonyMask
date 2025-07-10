@@ -82,7 +82,7 @@ cargo install tauri-cli
 2. **Run the installer** – it will automatically set up everything you need.
 3.  **Run AnonyMask** — the app will:
     - Open the desktop UI
-    - Run fully offline with the backend pre-configured
+    - Run fully offline with the backend automatically initialized. Please allow a few moments for the backend to start.
 
 <br>
 
@@ -114,22 +114,22 @@ cargo tauri dev
 ## 🖥️ Demo for Main Features
 
 ### 🔒 Masking File
-| Input File | Choose Model | Choose Masking Option | Download Masked File |
-| ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="ShadowMask/assets/1_inputFile.gif" width="500"> File format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/2_chooseModel.gif" width="500"> Model: Explicit or Implicit| <img src="ShadowMask/assets/3_chooseMaskingOption.gif" width="500"> Options: Redacted, Partial, Full Masking (Category, Value, All Random, Same Random) | <img src="ShadowMask/assets/4_downloadMaskedFile.gif" width="500"> Output: Masked File and Mapping Log File
+| Input File | Add / Exclude Word | Choose Model  | Choose Masking Option | Download Masked File |
+| ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
+| <img src="ShadowMask/assets/1_inputFile.gif" width="500"> File format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/2_addExcludeWord.gif" width="500"> Click and drag to add a word. <br> Remove it by clicking the red button. | <img src="ShadowMask/assets/3_chooseModel.gif" width="500"> Model: Explicit or Implicit | <img src="ShadowMask/assets/4_chooseMaskingOption.gif" width="500"> Options: Redacted, Partial, Full Masking (Category, Value, All Random, Same Random) | <img src="ShadowMask/assets/5_downloadMaskedFile.gif" width="500"> Output: Masked File and Mapping Log File
 
 <br>
 
 | Original File | Masked File | Mapping Log |
 | ---------------------------------------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
-| <img src="ShadowMask/assets/original_document.png" height="950">  [Example Original File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/original_document) | <img src="ShadowMask/assets/masked_document.png" height="550"> [Example Masked File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masked_document) | <img src="ShadowMask/assets/masking_log.png" height="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masking_log) | 
+| <img src="ShadowMask/assets/original_document.png" height="500">  [Example Original File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/original_document) | <img src="ShadowMask/assets/masked_document.png" height="500"> [Example Masked File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masked_document) | <img src="ShadowMask/assets/masking_log.png" height="500"> [Example Mapping Log File](https://github.com/Caudrey/AnonyMask/tree/main/ExampleFile/masking_log) | 
 
 <br>
 
 ### 🔓 Unmasking File
-| Input Mapping Log | Input Processed File | Download Unmasking Result |
-|:---------:|:-----------------------:|:-----------------------:|
-| <img src="ShadowMask/assets/1_inputMappingLog.gif" width="500"> Use mapping log generated during masking (format: .json) | <img src="ShadowMask/assets/2_inputProcessedFile.gif" width="250"> File Format: .txt, .csv, .pdf, .docx, .xlsx, and .xls | <img src="ShadowMask/assets/3_downloadUnmaskingResult.gif" width="250"> File will be automatically unmasked for download 
+| Process Unmasking File | Download Unmasking Result |
+|:---------:|:-----------------------:|
+| <img src="ShadowMask/assets/1_unmaskingProcess.gif" width="500"> Input mapping log generated during masking (.json) and processed file (.txt, .csv, .pdf, .docx, .xlsx, and .xls) | <img src="ShadowMask/assets/2_downloadUnmaskingResult.gif" width="250"> File will be automatically unmasked for download 
 
 
 <br>
