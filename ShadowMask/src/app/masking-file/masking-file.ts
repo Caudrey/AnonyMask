@@ -414,7 +414,7 @@ export class MaskingFile implements OnInit {
           const predictions = response.predictions;
 
           if (!predictions) {
-            return content; 
+            return content;
           }
 
           const sortedPredictions = predictions.sort(
@@ -750,7 +750,6 @@ export class MaskingFile implements OnInit {
 
   userMasking(): void {
     this.activePreviewType = 'value';
-    // Kosongkan preview tabel lain
     this.randomizedPreview = [];
     this.allRandomizedPreview = [];
     this.partialMaskedStats = [];
@@ -760,7 +759,7 @@ export class MaskingFile implements OnInit {
 
     const termsToMaskMap = new Map<string, string>();
 
-    this.aiDetectedPii.forEach((entry) => {
+    this.aiDetectedPii.forEach(entry => {
       termsToMaskMap.set(entry.original, entry.replaced);
     });
 
@@ -781,23 +780,30 @@ export class MaskingFile implements OnInit {
         ? new RegExp(`\\b${escapedTerm}\\b`, 'g')
         : new RegExp(escapedTerm, 'g');
 
-      currentMaskedContent = currentMaskedContent.replace(
-        regex,
-        (matchFound) => {
-          const existingLogEntry = this.replacementLog.find(
-            (log) => log.original === matchFound
-          );
-          if (existingLogEntry) {
-            existingLogEntry.replaced = replacement;
-          } else {
-            this.replacementLog.push({
-              original: matchFound,
-              replaced: replacement,
-            });
-          }
-          return replacement;
-        }
-      );
+      // currentMaskedContent = currentMaskedContent.replace(
+      //   regex,
+      //   (matchFound) => {
+      //     const existingLogEntry = this.replacementLog.find(
+      //       (log) => log.original === matchFound
+      //     );
+      //     if (existingLogEntry) {
+      //       existingLogEntry.replaced = replacement;
+      //     } else {
+      //       this.replacementLog.push({
+      //         original: matchFound,
+      //         replaced: replacement,
+      //       });
+      //     }
+      //     return replacement;
+      //   }
+      // );
+
+      currentMaskedContent = currentMaskedContent.replace(regex, (matchFound) => {
+        // Ini akan selalu push nilai `replacement` yang sudah diambil dari `termsToMaskMap`
+        // Yang mana `termsToMaskMap` sudah berisi nilai terbaru dari `aiDetectedPii`
+        this.replacementLog.push({ original: matchFound, replaced: replacement });
+        return replacement;
+      });
     });
 
     this.maskedContent = currentMaskedContent;
@@ -1655,6 +1661,12 @@ export class MaskingFile implements OnInit {
     if (aiEntry) {
       aiEntry.replaced = newMasked;
     }
+
+    const userIndex = this.searchTermsUser.indexOf(original);
+    if (userIndex !== -1) {
+        this.replacementTermsUser[userIndex] = newMasked;
+    }
+
 
     if (this.activePreviewType === 'value') {
       this.userMasking();
