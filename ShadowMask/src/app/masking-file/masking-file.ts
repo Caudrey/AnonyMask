@@ -358,12 +358,12 @@ export class MaskingFile implements OnInit {
 //             this.fileReady = true;
 //             this.isGenerating = false;
 //             console.log("Log generated from APIS:", this.replacementLog)
-          },
-          error: (err) => {
-            console.error("API Error:", err);
-            this.isGenerating = false;
-            this.fileReady = false; // Optionally show an error state
-          }
+        //   },
+        //   error: (err) => {
+        //     console.error("API Error:", err);
+        //     this.isGenerating = false;
+        //     this.fileReady = false; // Optionally show an error state
+        //   }
         });
 
         this.searchTermsCategory = this.aiDetectedPii.map((p) => p.original);
@@ -528,7 +528,9 @@ export class MaskingFile implements OnInit {
             //     this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
             // });
 
-            sortedPredictions.forEach((prediction: any) => { // Treat each prediction as 'any' type
+          // Gunakan localCategoryCounts untuk API call ini
+          const localCategoryCounts: Record<string, number> = {};
+          sortedPredictions.forEach((prediction: any) => { // Treat each prediction as 'any' type
 
             // --- THE KEY CHANGE IS HERE ---
             // Extract the 'topic' string from each object in the array, then join.
@@ -539,48 +541,19 @@ export class MaskingFile implements OnInit {
               const category = topics;
               this.categoryFromModel.push(category);
 
-              const replacement = this.checkCategoryCount(category, prediction.sentence);
-              console.log(`Replacing sentence: "${prediction.sentence}" with mask: "${replacement}"`);
-
-              // This replacement logic is correct.
-              maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
-
-              this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
-            });
-
-          const sortedPredictions = predictions.sort(
-            (a: any, b: any) => b.start - a.start
-          );
-          let maskedCont = content;
-          // Gunakan localCategoryCounts untuk API call ini
-          const localCategoryCounts: Record<string, number> = {};
-
-          sortedPredictions.forEach(
-            (prediction: {
-              sentence: string;
-              predicted_topics: string[];
-              start: number;
-              end: number;
-            }) => {
-              const topics = prediction.predicted_topics.join(', ');
-              const category = topics;
               // Gunakan localCategoryCounts
               const count = localCategoryCounts[category] || 0;
               localCategoryCounts[category] = count + 1;
               const replacement =
                 count === 0 ? `[${category}]` : `[${category}_${count + 1}]`;
 
-              maskedCont =
-                maskedCont.substring(0, prediction.start) +
-                replacement +
-                maskedCont.substring(prediction.end);
+              console.log(`Replacing sentence: "${prediction.sentence}" with mask: "${replacement}"`);
 
-              this.replacementLog.push({
-                original: prediction.sentence,
-                replaced: replacement,
-              });
-            }
-          );
+              // This replacement logic is correct.
+              maskedCont = maskedCont.substring(0, prediction.start) + replacement + maskedCont.substring(prediction.end);
+
+              this.replacementLog.push({ original: prediction.sentence, replaced: replacement });
+          });
 
           console.log('Log generated from API Implicit:', this.replacementLog);
           return maskedCont;
