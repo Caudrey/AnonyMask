@@ -77,7 +77,7 @@ cargo install tauri-cli
 ### 🔧 Production Mode
 1. **Download the `.exe` installer** from the link below.
     
-    [AnonyMask Exe](https://binusianorg-my.sharepoint.com/my?id=%2Fpersonal%2Fcecilia%5Fherli001%5Fbinus%5Fac%5Fid%2FDocuments%2FAnonyMask%2Ftarget%2Frelease%2Fbundle%2Fnsis)
+    [AnonyMask Exe](https://drive.google.com/drive/folders/1rAqFDuNPTFIZES976uu7LnYLeUM-MjVR?usp=sharing)
 
 2. **Run the installer** – it will automatically set up everything you need.
 3.  **Run AnonyMask** — the app will:
