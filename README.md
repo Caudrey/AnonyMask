@@ -2,7 +2,7 @@
 
 <p align="center" width="100">
 
-<img src="ShadowMask/assets/AnonyMask.png">
+ <img src="ShadowMask/assets/Anonymask_Logo.png">
 
 </p>
 
