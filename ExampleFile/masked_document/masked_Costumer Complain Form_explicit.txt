@@ -1,0 +1,26 @@
+CONFIDENTIAL! FOR ANALYSIS PURPOSE ONLY!
+Costumer Complain Form
+Subject: Urgent Complaint Regarding Unauthorized Transaction 
+Personal Details:
+*	Full Name: [Name]
+*	National ID (KTP): [SSN]
+*	Home Address: [Address].
+Complaint Details: 
+To Whom It May Concern,
+
+My name is [Name], and my social security number for tax purposes is [SSN_1]. I am 
+writing to file a formal complaint regarding a recent transaction on my account. Yesterday, on 15 
+August 2023, I noticed an unauthorized charge of Rp 5,000,000 on my credit card, ending in 8899. 
+The full card number is [Card_Number].
+
+This transaction was not made by me. My current bank account [Account]), should have a 
+much higher balance. I suspect my data has been leaked. I was born on [DOB]. My 
+driver's license number is [Plate].
+
+Please investigate this matter immediately. You can reach me with this email. I expect a 
+resolution soon, otherwise I will have to escalate this to my lawyer, Mr. [Name_2].
+
+Sincerely, 
+[Name]
+
+

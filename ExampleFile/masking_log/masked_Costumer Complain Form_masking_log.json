@@ -1,0 +1,50 @@
+{
+  "fileName": "masked_Costumer Complain Form_explicit.txt",
+  "modelUsed": "explicit",
+  "mapping": [
+    {
+      "original": "Budi Santoso",
+      "masked": "[Name]"
+    },
+    {
+      "original": "3201234567890001",
+      "masked": "[SSN]"
+    },
+    {
+      "original": "Jl. Merdeka No. 45, Jakarta Selatan, 12345, Indonesia",
+      "masked": "[Address]"
+    },
+    {
+      "original": "Budi Santoso",
+      "masked": "[Name]"
+    },
+    {
+      "original": "987-65-4321",
+      "masked": "[SSN_1]"
+    },
+    {
+      "original": "4111-2222-3333-8899",
+      "masked": "[Card_Number]"
+    },
+    {
+      "original": "(5566778899",
+      "masked": "[Account]"
+    },
+    {
+      "original": "March 15, 1985",
+      "masked": "[DOB]"
+    },
+    {
+      "original": "D 1234 XYZ",
+      "masked": "[Plate]"
+    },
+    {
+      "original": "Andi Wijaya",
+      "masked": "[Name_1]"
+    },
+    {
+      "original": "Budi Santoso",
+      "masked": "[Name]"
+    }
+  ]
+}
