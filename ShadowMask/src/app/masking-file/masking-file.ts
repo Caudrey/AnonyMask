@@ -128,8 +128,7 @@ export class MaskingFile implements OnInit {
 
     // this.fileReady = true;
 
-    this.processOriginalContent();
-
+    // this.processOriginalContent();
     if (this.replacementLog.length === 0) {
       console.warn(
         '⚠️ replacementLog kosong. Pastikan Anda belum klik Fully Mask sebelum ini.'
@@ -348,7 +347,7 @@ export class MaskingFile implements OnInit {
               category: category,
               replaced: logEntry.replaced,
             });
-              
+
             // The replacementLog is now set by the API response, so we can generate tables
 //             this.generateDiffTokens();
 //             this.generatePreviewTables();
