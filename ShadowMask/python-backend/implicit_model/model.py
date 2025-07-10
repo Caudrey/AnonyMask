@@ -18,14 +18,16 @@ BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 
 # If running from PyInstaller, add subfolder
 if hasattr(sys, '_MEIPASS'):
-    IMPLICIT_MODEL_PATH = str(BASE_DIR / "implicit_model")
+    IMPLICIT_MODEL_LOCAL_PATH = str(BASE_DIR / "implicit_model")
 else:
     # In dev mode, the script is already inside explicit_model/
-    IMPLICIT_MODEL_PATH = BASE_DIR
+    IMPLICIT_MODEL_LOCAL_PATH = BASE_DIR
 
-MLB_PATH = IMPLICIT_MODEL_PATH / "mlb.pkl"
+MLB_PATH = IMPLICIT_MODEL_LOCAL_PATH / "mlb.pkl"
 
 CONFIDENCE_THRESHOLD = 0.5 # Only show predictions with a score > 0.5
+IMPLICIT_MODEL_PATH = "WhiteCloudd/AnonymaskImplicit"
+# MLB_PATH = IMPLICIT_MODEL_LOCAL_PATH + "/mlb.pkl"
 
 # This list must be loaded from your training script or be identical to mlb.classes_
 # to ensure the mapping from prediction index to label name is correct.
@@ -35,7 +37,7 @@ CONFIDENCE_THRESHOLD = 0.5 # Only show predictions with a score > 0.5
 #     'Med_Hist', 'Name', 'Occ_Hist', 'POB', 'Parent_Name', 'Plate',
 #     'Religion', 'Salary', 'Username'
 # ]
-# --- 2. MODEL LOADING ---
+# --- 2. MODEL LOADING --
 
 print("Loading implicit classification model...")
 print("Full path of this file:", os.path.abspath(__file__))
@@ -48,12 +50,15 @@ def load_implicit_tools(model_path, mlb_path):
     print(f"Using device: {device}")
 
     try:
-        if not model_path.exists() or not mlb_path.exists():
-            raise FileNotFoundError("Model or mlb.pkl not found in the specified path.")
+        # if not model_path.exists() or not mlb_path.exists():
+        #     raise FileNotFoundError("Model or mlb.pkl not found in the specified path.")
 
         model = AutoModelForSequenceClassification.from_pretrained(model_path)
+        print("1")
         tokenizer = AutoTokenizer.from_pretrained(model_path)
+        print("2")
         mlb = joblib.load(mlb_path)
+        print("3")
 
         model.to(device)
         model.eval()
