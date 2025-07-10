@@ -12,16 +12,17 @@ from datetime import datetime
 import sys
 from pathlib import Path
 
-# For PyInstaller compatibility
-BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+# # For PyInstaller compatibility
+# BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 
-# If running from PyInstaller, add subfolder
-if hasattr(sys, '_MEIPASS'):
-    MODEL_PATH = str(BASE_DIR / "explicit_model")
-else:
-    # In dev mode, the script is already inside explicit_model/
-    MODEL_PATH = str(BASE_DIR)
+# # If running from PyInstaller, add subfolder
+# if hasattr(sys, '_MEIPASS'):
+#     MODEL_PATH = str(BASE_DIR / "explicit_model")
+# else:
+#     # In dev mode, the script is already inside explicit_model/
+#     MODEL_PATH = str(BASE_DIR)
 
+MODEL_PATH = "WhiteCloudd/AnonymaskExplicit"
 MAX_LENGTH = 128  # The maximum sequence length for the model
 OVERLAP = 30      # The number of tokens to overlap between chunks
 
