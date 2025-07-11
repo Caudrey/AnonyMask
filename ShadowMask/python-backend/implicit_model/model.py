@@ -1,3 +1,4 @@
+import logging
 import torch
 import numpy as np
 import joblib
@@ -18,15 +19,28 @@ BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 
 # If running from PyInstaller, add subfolder
 if hasattr(sys, '_MEIPASS'):
-    IMPLICIT_MODEL_LOCAL_PATH = str(BASE_DIR / "implicit_model")
+    IMPLICIT_MODEL_PATH = str(BASE_DIR) + "\implicit_model"
+    MLB_PATH = str(IMPLICIT_MODEL_PATH) + "\mlb.pkl"
 else:
     # In dev mode, the script is already inside explicit_model/
-    IMPLICIT_MODEL_LOCAL_PATH = BASE_DIR
+    IMPLICIT_MODEL_PATH = "WhiteCloudd/AnonymaskImplicit"
+    MLB_PATH = str(BASE_DIR) + "\mlb.pkl"
 
-MLB_PATH = IMPLICIT_MODEL_LOCAL_PATH / "mlb.pkl"
+
+logging.basicConfig(
+    filename="anonymask_backend.log",  # This log file will appear in the working dir (see below)
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+print("Implicit model path: " + IMPLICIT_MODEL_PATH)
+print("MLB PATH: " + str(MLB_PATH))
+logging.info("Implicit model path: " + IMPLICIT_MODEL_PATH)
+logging.info("MLB PATH: " + str(MLB_PATH))
+
+# MLB_PATH = IMPLICIT_MODEL_PATH / "mlb.pkl"
 
 CONFIDENCE_THRESHOLD = 0.5 # Only show predictions with a score > 0.5
-IMPLICIT_MODEL_PATH = "WhiteCloudd/AnonymaskImplicit"
+# IMPLICIT_MODEL_PATH = "WhiteCloudd/AnonymaskImplicit"
 # MLB_PATH = IMPLICIT_MODEL_LOCAL_PATH + "/mlb.pkl"
 
 # This list must be loaded from your training script or be identical to mlb.classes_
@@ -54,17 +68,22 @@ def load_implicit_tools(model_path, mlb_path):
         #     raise FileNotFoundError("Model or mlb.pkl not found in the specified path.")
 
         model = AutoModelForSequenceClassification.from_pretrained(model_path)
-        print("1")
+        logging.info("1")
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        print("2")
+        logging.info("2")
         mlb = joblib.load(mlb_path)
-        print("3")
+        logging.info("3")
+
+        # model.save_pretrained("models/AnonymaskImplicit")
+        # tokenizer.save_pretrained("models/AnonymaskImplicit")
 
         model.to(device)
         model.eval()
 
         print("Model, Tokenizer, and MultiLabelBinarizer loaded successfully.")
         print(f"Detected Labels: {list(mlb.classes_)}")
+        print(f"Detected Labels: {list(mlb.classes_)}")
+        logging.info(f"Detected Labels: {list(mlb.classes_)}")
         return model, tokenizer, mlb, device
 
     except Exception as e:

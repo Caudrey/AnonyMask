@@ -1,3 +1,4 @@
+import logging
 import torch
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 import re
@@ -12,17 +13,26 @@ from datetime import datetime
 import sys
 from pathlib import Path
 
-# # For PyInstaller compatibility
-# BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+# For PyInstaller compatibility
+BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 
-# # If running from PyInstaller, add subfolder
-# if hasattr(sys, '_MEIPASS'):
-#     MODEL_PATH = str(BASE_DIR / "explicit_model")
-# else:
-#     # In dev mode, the script is already inside explicit_model/
-#     MODEL_PATH = str(BASE_DIR)
+# If running from PyInstaller, add subfolder
+if hasattr(sys, '_MEIPASS'):
+    MODEL_PATH = str(BASE_DIR) + "\explicit_model"
+else:
+    # In dev mode, the script is already inside explicit_model/
+    MODEL_PATH = "WhiteCloudd/AnonymaskExplicit"
 
-MODEL_PATH = "WhiteCloudd/AnonymaskExplicit"
+logging.basicConfig(
+    filename="anonymask_backend.log",  # This log file will appear in the working dir (see below)
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+print("Explicit model path: " + MODEL_PATH)
+logging.info("Explicit model path: " + MODEL_PATH)
+
+
+# MODEL_PATH = "WhiteCloudd/AnonymaskExplicit"
 MAX_LENGTH = 128  # The maximum sequence length for the model
 OVERLAP = 30      # The number of tokens to overlap between chunks
 
@@ -33,6 +43,10 @@ try:
     # Load the fine-tuned model and tokenizer
     tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH)
     model = AutoModelForTokenClassification.from_pretrained(MODEL_PATH).to(device)
+
+    # model.save_pretrained("models/AnonymaskExplicit")
+    # tokenizer.save_pretrained("models/AnonymaskExplicit")
+
     model.eval()
 
     # Load labels dynamically from the model's config for robustness
