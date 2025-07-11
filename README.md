@@ -52,7 +52,7 @@ Despite regulations such as <b>GDPR</b> and <b>UU PDP</b> in Indonesia, many use
 
 
 ## ⚙️ Requirements
-### 🔧 Production Mode
+### 🔧 Production Mode (Ready to Use)
 - Required Ports:
     - Port 4200 (Frontend - Angular)
     - Port 8000 (Backend - Python backend)
@@ -61,7 +61,7 @@ Despite regulations such as <b>GDPR</b> and <b>UU PDP</b> in Indonesia, many use
 
 <br>
 
-### 🧪 [OPTIONAL] Development Mode
+### 🧪 Development Mode (If You Don't Believe the Pre-built Tools)
 - Python 3.x
 - Node.js 
 - Angular
@@ -74,7 +74,7 @@ cargo install tauri-cli
 <br><br>
 
 ## 🚀 Deployment and Usage
-### 🔧 Production Mode
+### 🔧 Production Mode (Ready to Use)
 1. **Download the `.exe` installer** from the link below.
     
     [AnonyMask Exe](https://drive.google.com/drive/folders/1rAqFDuNPTFIZES976uu7LnYLeUM-MjVR?usp=sharing)
@@ -86,7 +86,7 @@ cargo install tauri-cli
 
 <br>
 
-### 🧪 [OPTIONAL] Development Mode
+### 🧪 Development Mode (If You Don't Believe the Pre-built Tools)
 
 1. Clone the Repository
 ``` 
@@ -148,3 +148,4 @@ cargo tauri dev
 - [Caudrey](https://github.com/Caudrey)
 - [vincent-kartamulya](https://github.com/vincent-kartamulya)
 - [nadyaclrp](https://github.com/nadyaclrp)
+- [yohdeepsnow](https://github.com/yohdeepsnow)
