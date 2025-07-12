@@ -19,12 +19,12 @@ BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
 
 # If running from PyInstaller, add subfolder
 if hasattr(sys, '_MEIPASS'):
-    IMPLICIT_MODEL_PATH = str(BASE_DIR) + "\implicit_model"
-    MLB_PATH = str(IMPLICIT_MODEL_PATH) + "\mlb.pkl"
+    IMPLICIT_MODEL_PATH =  os.path.join(BASE_DIR, "implicit_model")
+    MLB_PATH = os.path.join(BASE_DIR, "implicit_model", "mlb.pkl")
 else:
     # In dev mode, the script is already inside explicit_model/
     IMPLICIT_MODEL_PATH = "WhiteCloudd/AnonymaskImplicit"
-    MLB_PATH = str(BASE_DIR) + "\mlb.pkl"
+    MLB_PATH = os.path.join(BASE_DIR, "mlb.pkl")
 
 
 logging.basicConfig(
@@ -80,8 +80,8 @@ def load_implicit_tools(model_path, mlb_path):
         model.to(device)
         model.eval()
 
-        print("Model, Tokenizer, and MultiLabelBinarizer loaded successfully.")
-        print(f"Detected Labels: {list(mlb.classes_)}")
+        logging.info("Model, Tokenizer, and MultiLabelBinarizer loaded successfully.")
+        logging.info(f"Detected Labels: {list(mlb.classes_)}")
         print(f"Detected Labels: {list(mlb.classes_)}")
         logging.info(f"Detected Labels: {list(mlb.classes_)}")
         return model, tokenizer, mlb, device
@@ -90,6 +90,9 @@ def load_implicit_tools(model_path, mlb_path):
         print(f"--- ERROR LOADING MODEL ---")
         print(f"Error: {e}")
         print(f"Please ensure the path '{model_path}' and '{mlb_path}' are correct.")
+        logging.info(f"--- ERROR LOADING MODEL ---")
+        logging.info(f"Error: {e}")
+        logging.info(f"Please ensure the path '{model_path}' and '{mlb_path}' are correct.")
         return None, None, None, None
 
 # Load all necessary components at the start
