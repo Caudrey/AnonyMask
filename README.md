@@ -7,7 +7,8 @@
 </p>
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue)](https://www.apache.org/licenses/LICENSE-2.0)
-
+ <a href="https://blackhat.com/eu-25/arsenal/schedule/#anonymask-automated-masking-and-unmasking-of-explicit-and-implicit-privacy-data-48546"><img src="https://img.shields.io/badge/Black_Hat_Arsenal-Europe_2025-640D5F"></a>
+ 
 <p align="justify"><b>AnonyMask</b> is a privacy-preserving tool designed to <b>automatically detect, mask, and unmask privacy data</b> across <b>various file formats</b>. It allows enterprises to leverage the power of Large Language Model (LLM) or Retrieval-Augmented Generation (RAG) while ensuring that private or confidential information remains secure and compliant. With a single click, users can anonymize both <b>explicit and implicit privacy data</b> before sending it to LLM or RAG for analysis—and restore the original content afterward using smart unmasking. AnonyMask offers a secure, customizable, and offline-capable privacy-preserving document compatible with common file types such as .pdf, .docx, .xlsx, .csv, and .txt.</p>
 
 <br>
